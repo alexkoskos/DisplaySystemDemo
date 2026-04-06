@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGL Display System Concept</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body { margin: 0; background-color: #0a0a0a; color: #f8fafc; font-family: 'Inter', sans-serif; overflow-x: auto; overflow-y: hidden; }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(23, 23, 23, 0.5); }
+        ::-webkit-scrollbar-thumb { background: #404040; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #525252; }
+
+        /* Sliders Customization */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px; width: 16px;
+            border-radius: 50%;
+            background: #38bdf8;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 4px;
+            cursor: pointer;
+            background: #404040;
+            border-radius: 2px;
+        }
+
+        /* 3D Labels Glassmorphism */
+        .label-3d { 
+            position: absolute; transform: translate(-50%, -50%); 
+            font-size: 13px; font-weight: 600; text-align: center;
+            background: rgba(23, 23, 23, 0.65); 
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            padding: 8px 14px; border-radius: 8px; pointer-events: none; z-index: 5;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            white-space: nowrap;
+        }
+
+        /* Background Grid pattern */
+        .bg-grid {
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        }
+    </style>
+</head>
+<body>
+
+<!-- Главный контейнер (3 колонки) -->
+<div class="flex w-full h-screen min-w-[1200px] relative">
+
+    <!-- Переключатель языка -->
+    <div class="absolute top-5 left-1/2 transform -translate-x-1/2 bg-neutral-900/90 backdrop-blur-md border border-neutral-700 rounded-full p-1 flex items-center z-50 shadow-lg">
+        <button id="lang-ru" class="px-4 py-1.5 rounded-full text-[11px] font-bold text-white bg-neutral-700 transition-colors">RU</button>
+        <button id="lang-en" class="px-4 py-1.5 rounded-full text-[11px] font-bold text-neutral-400 hover:text-white transition-colors">ENG</button>
+    </div>
+
+    <!-- ================= ЛЕВАЯ ПАНЕЛЬ: ИНФОРМАЦИЯ ================= -->
+    <aside class="w-[360px] shrink-0 flex flex-col bg-neutral-900 border-r border-neutral-800 shadow-2xl z-20 h-full">
+        <div id="info-header" class="px-6 py-5 flex justify-between items-center cursor-pointer hover:bg-neutral-800/80 transition-colors border-b border-neutral-800">
+            <div class="flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h2 class="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-300" data-i18n="howItWorks">Как это работает?</h2>
+            </div>
+            <svg id="info-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-neutral-400 transform transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+            </svg>
+        </div>
+        
+        <div id="info-content" class="px-6 py-5 overflow-y-auto flex-1">
+            <p class="text-sm text-neutral-300 leading-relaxed mb-4" data-i18n-html="desc1">
+                <strong class="text-white">Display System</strong> — это комбинаторная система для рендеринга дисплеев со сложной сеткой в мире игры за 1 вызов отрисовки.
+            </p>
+
+            <div class="bg-neutral-950/50 p-4 rounded-lg border border-neutral-800 mb-6">
+                <h3 class="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3" data-i18n="genTitle">Генерация пресетов (Houdini)</h3>
+                <p class="text-xs text-neutral-400 leading-relaxed" data-i18n-html="genDesc">
+                    Для получения предсказуемого контроля пиксельные пресеты создаются вручную — ячейки раскрашиваются разной яркостью. Далее в <strong>Houdini</strong> ячейки отделяются на основе разницы яркости. Каждая считает свой размер, позицию, аспект и индекс, после чего данные запаковываются в <strong>.exr</strong> текстуру.
+                </p>
+            </div>
+            
+            <div class="bg-blue-900/20 border border-blue-800/50 p-3 rounded-md mb-6">
+                <p class="text-xs text-blue-300 leading-relaxed">
+                    <strong data-i18n="packTitle">Упаковка данных:</strong> <span data-i18n-html="packDesc">Т.к. формат .exr может хранить значения более единицы, в каждый канал RGB текстуры запакованы сразу <strong>2 значения</strong> (в целую и дробную часть). Например, позиция по X и Y может быть записана как <code class="bg-blue-950 px-1 rounded">3.2</code>.</span>
+                </p>
+            </div>
+
+            <div class="bg-neutral-950/50 p-4 rounded-lg border border-neutral-800 mt-4 mb-4">
+                <h3 class="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-4" data-i18n="shaderTitle">Распаковка в Шейдере</h3>
+                
+                <ul class="space-y-4 text-sm text-neutral-300 mb-5 bg-neutral-900/50 p-3 rounded-md border border-neutral-800/50">
+                    <li class="flex items-start gap-3">
+                        <span class="text-red-400 font-bold w-4 mt-0.5">R:</span> 
+                        <div>
+                            <strong class="text-white text-xs block mb-1">Pos.xy</strong>
+                            <span class="text-[11px] text-neutral-400 leading-tight block" data-i18n="rDesc">Позиция ячейки в пресете. Отвечает за отступ, чтобы сместить отсчет координат на 0 в каждой ячейке.</span>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <span class="text-green-400 font-bold w-4 mt-0.5">G:</span> 
+                        <div>
+                            <strong class="text-white text-xs block mb-1">Size.xy</strong>
+                            <span class="text-[11px] text-neutral-400 leading-tight block" data-i18n="gDesc">Размер ячейки. Трансформирует координаты для приведения UV к 0-1. Указывает, насколько сдвинуть UV по вертикали для следующего варианта.</span>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <span class="text-blue-400 font-bold w-4 mt-0.5">B:</span> 
+                        <div>
+                            <strong class="text-white text-xs block mb-1">CellAspect + Index</strong>
+                            <span class="text-[11px] text-neutral-400 leading-tight block" data-i18n-html="bDesc"><strong>Аспект</strong>: Отвечает за позицию нулевого варианта на атласе. В шейдере ему назначается базовый отступ по uv.xy.<br><br><strong>Index</strong>: Уникальный номер, позволяющий менять вариант ячейки из блюпринта используя cpd (двигаться по вертикали в атласе).</span>
+                        </div>
+                    </li>
+                </ul>
+
+                <div class="space-y-2">
+                    <p class="text-[11px] text-neutral-500 leading-relaxed pl-2 border-l-2 border-neutral-700" data-i18n-html="udimDesc">
+                        Изначально система создавалась под <strong>UDIM</strong>, поэтому все значения отступов были целочисленными. Из-за лимита UDIM на количество вариантов произошел переход к обычной виртуальной текстуре. Теперь UV нормализуются делением на общее число квадратов по обеим осям.
+                    </p>
+                </div>
+            </div>
+
+            <div class="bg-neutral-950/50 p-4 rounded-lg border border-neutral-800 mt-4 mb-4">
+                <h3 class="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3" data-i18n="usageTitle">Использование в проекте</h3>
+                <p class="text-xs text-neutral-400 leading-relaxed mb-3" data-i18n="usageDesc1">
+                    Система вешается в виде компонента на дисплей в мире игры, который сам определяет по соотношению сторон статик меша экрана какой ближайший аспект. И художнику остается только выбрать из списка нужный сеттинг и визуал.
+                </p>
+                <p class="text-xs text-neutral-400 leading-relaxed" data-i18n="usageDesc2">
+                    Настройка контента выполняется либо кнопками рандомизации пресета и наполнения ячеек, либо при необходимости можно выбрать вручную номер пресета и номер варианта для каждой ячейки. Все остальное происходит под капотом в блюпринте компонента и отправляется в виде cpd данных в материал экрана.
+                </p>
+
+                <div class="bg-neutral-900/50 border border-neutral-800/50 p-3 rounded-md mt-4">
+                    <ul class="space-y-2 text-[11px] text-neutral-300">
+                        <li class="flex items-start gap-2"><span class="text-cyan-400 font-bold min-w-[28px] text-right">10</span> <span data-i18n="stat1">текстурных атласов (разные сеттинги и локации)</span></li>
+                        <li class="flex items-start gap-2"><span class="text-emerald-400 font-bold min-w-[28px] text-right">3</span> <span data-i18n="stat2">варианта визуала (Голограмма, Стекло, Непрозрачный)</span></li>
+                        <li class="flex items-start gap-2"><span class="text-purple-400 font-bold min-w-[28px] text-right">21</span> <span data-i18n="stat3">аспект или размер экрана самого дисплея</span></li>
+                        <li class="flex items-start gap-2"><span class="text-blue-400 font-bold min-w-[28px] text-right">3-12</span> <span data-i18n="stat4">пресетов расположения ячеек под каждый аспект экрана</span></li>
+                        <li class="flex items-start gap-2"><span class="text-red-400 font-bold min-w-[28px] text-right">15</span> <span data-i18n="stat5">аспектов или размеров ячеек</span></li>
+                        <li class="flex items-start gap-2"><span class="text-yellow-400 font-bold min-w-[28px] text-right">3-10</span> <span data-i18n="stat6">вариантов в каждой ячейке</span></li>
+                    </ul>
+                    <div class="mt-3 pt-3 border-t border-neutral-800 text-center font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 uppercase tracking-widest text-[11px]" data-i18n="statTotal">
+                        = Бесконечная комбинаторика
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </aside>
+
+    <!-- ================= ЦЕНТРАЛЬНАЯ ЧАСТЬ: WEBGL ================= -->
+    <main id="canvas-wrapper" class="flex-1 relative bg-grid bg-neutral-950 flex items-center justify-center overflow-hidden">
+        <div id="canvas-container" class="absolute inset-0"></div>
+        
+        <div id="label-atlas" class="label-3d">
+            <span class="text-blue-300" data-i18n="lblAtlasTitle">Текстурный Атлас (Виртуальная текстура)</span><br>
+            <span class="text-xs text-neutral-400 font-normal" data-i18n="lblAtlasDesc">В памяти только использованные варианты</span>
+        </div>
+        <div id="label-screen" class="label-3d">
+            <span class="text-emerald-300"><span data-i18n="lblScreenTitle">Итоговый Экран</span> <span id="label-screen-aspect">3x3</span></span><br>
+            <span class="text-xs text-neutral-400 font-normal" data-i18n="lblScreenDesc">Сборка фрагментным шейдером</span>
+        </div>
+        
+        <!-- Контейнер для букв поверх итогового экрана -->
+        <div id="cell-labels" class="absolute inset-0 pointer-events-none z-10"></div>
+
+        <!-- НОВАЯ НИЖНЯЯ ПАНЕЛЬ: Глобальные настройки -->
+        <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-neutral-900/90 backdrop-blur-md border border-neutral-700 rounded-2xl shadow-2xl z-20 px-6 py-4 flex items-center gap-6">
+            
+            <!-- Пиксельная текстура -->
+            <div class="flex flex-col items-center shrink-0">
+                <label class="text-[10px] font-bold text-cyan-400 uppercase tracking-wider mb-1.5" data-i18n="texture">Текстура</label>
+                <div class="h-[60px] flex items-center justify-center">
+                    <canvas id="ui-preset-canvas" class="rounded border border-neutral-700 shadow-[0_0_10px_rgba(0,0,0,0.3)]" style="image-rendering: pixelated;"></canvas>
+                </div>
+            </div>
+
+            <div class="w-px h-10 bg-neutral-700"></div> <!-- Разделитель -->
+
+            <div class="flex flex-col gap-1.5 w-32">
+                <label class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider pl-1" data-i18n="aspect">Аспект</label>
+                <div class="relative">
+                    <select id="aspect-select" class="w-full bg-neutral-950 border border-neutral-700 rounded-lg p-2.5 pr-6 text-sm text-white appearance-none outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all cursor-pointer">
+                        <option value="3x3" data-i18n="aspectSq">3x3 (Квадрат)</option>
+                        <option value="3x2" data-i18n="aspectWide">3x2 (Широкий)</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-neutral-400">
+                        <svg class="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-1.5 w-48">
+                <label class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider pl-1" data-i18n="preset">Пресет</label>
+                <div class="relative">
+                    <select id="preset-select" class="w-full bg-neutral-950 border border-neutral-700 rounded-lg p-2.5 pr-6 text-sm text-white appearance-none outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all cursor-pointer">
+                        <!-- Options filled dynamically via JS -->
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-neutral-400">
+                        <svg class="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-px h-10 bg-neutral-700"></div> <!-- Разделитель -->
+
+            <div class="flex flex-col gap-2 items-center justify-center">
+                <label class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider cursor-pointer select-none whitespace-nowrap" id="style-toggle-label">Debug</label>
+                <button id="style-toggle" class="relative inline-flex h-6 w-11 items-center rounded-full bg-neutral-700 transition-colors focus:outline-none">
+                    <span id="style-toggle-thumb" class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-1"></span>
+                </button>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ================= ПРАВАЯ ПАНЕЛЬ: УПРАВЛЕНИЕ ================= -->
+    <aside class="w-[288px] shrink-0 flex flex-col bg-neutral-900 border-l border-neutral-800 shadow-2xl z-20 h-full">
+        <div class="px-6 py-5 flex justify-between items-center border-b border-neutral-800">
+            <h1 class="text-xl font-bold text-white tracking-tight" data-i18n="settingsTitle">Настройки</h1>
+            
+            <div class="flex items-center gap-1 mr-1">
+                <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest cursor-default select-none mt-0.5">rand</span>
+                <button id="randomize-all-btn" class="text-neutral-400 hover:text-cyan-400 transition-colors p-1 rounded-md hover:bg-neutral-800 flex items-center justify-center" title="Рандомизировать все ячейки">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="16" height="16" x="4" y="4" rx="2" ry="2"/><path d="M8 8h.01"/><path d="M16 8h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/><path d="M12 12h.01"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex-1 flex flex-col overflow-hidden p-6">
+            <h2 class="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3" data-i18n="cellContent">Содержимое ячеек</h2>
+            <div id="sliders-container" class="flex-1 overflow-y-auto pr-2 flex flex-col gap-3"></div>
+        </div>
+    </aside>
+
+</div>
+
+<script>
+// ==========================================
+// 1. НАСТРОЙКИ СИСТЕМЫ И ДАННЫХ
+// ==========================================
+const COLORS = {
+    0: { bg: "#4a2531", border: "#7a3e52" },
+    1: { bg: "#23453f", border: "#3c7066" },
+    2: { bg: "#213b5e", border: "#3b6399" },
+    3: { bg: "#3e285c", border: "#664396" }
+};
+
+const TYPES = {
+    0: { w: 1, h: 1, maxVars: 5, name: "1x1" },
+    1: { w: 2, h: 1, maxVars: 5, name: "2x1" },
+    2: { w: 1, h: 2, maxVars: 2, name: "1x2" },
+    3: { w: 1, h: 3, maxVars: 1, name: "1x3" }
+};
+
+const GRIDS = {
+    '3x3': { cols: 3, rows: 3 },
+    '3x2': { cols: 3, rows: 2 }
+};
+
+const PRESETS = {
+    '3x3': [
+        {
+            name: "Асимметрия",
+            cells: [
+                { id: "A", type: 3, variant: 0, gridX: 0, gridY: 0 },
+                { id: "B", type: 1, variant: 0, gridX: 1, gridY: 0 },
+                { id: "C", type: 0, variant: 1, gridX: 1, gridY: 1 },
+                { id: "D", type: 0, variant: 2, gridX: 2, gridY: 1 },
+                { id: "E", type: 1, variant: 1, gridX: 1, gridY: 2 }
+            ]
+        },
+        {
+            name: "Сетка 1x1/1x2",
+            cells: [
+                { id: "A", type: 0, variant: 3, gridX: 0, gridY: 0 },
+                { id: "B", type: 0, variant: 4, gridX: 1, gridY: 0 },
+                { id: "C", type: 0, variant: 5, gridX: 2, gridY: 0 },
+                { id: "D", type: 1, variant: 2, gridX: 0, gridY: 1 },
+                { id: "E", type: 2, variant: 1, gridX: 2, gridY: 1 },
+                { id: "F", type: 1, variant: 3, gridX: 0, gridY: 2 }
+            ]
+        },
+        {
+            name: "Основа 1x2",
+            cells: [
+                { id: "A", type: 2, variant: 2, gridX: 0, gridY: 0 },
+                { id: "B", type: 2, variant: 0, gridX: 1, gridY: 0 },
+                { id: "C", type: 2, variant: 1, gridX: 2, gridY: 0 },
+                { id: "D", type: 0, variant: 1, gridX: 0, gridY: 2 },
+                { id: "E", type: 0, variant: 0, gridX: 1, gridY: 2 },
+                { id: "F", type: 0, variant: 2, gridX: 2, gridY: 2 }
+            ]
+        }
+    ],
+    '3x2': [
+        {
+            name: "Компактный",
+            cells: [
+                { id: "A", type: 2, variant: 0, gridX: 0, gridY: 0 }, // 1x2 (слева)
+                { id: "B", type: 1, variant: 1, gridX: 1, gridY: 0 }, // 2x1 (сверху справа)
+                { id: "C", type: 0, variant: 2, gridX: 1, gridY: 1 }, // 1x1 
+                { id: "D", type: 0, variant: 3, gridX: 2, gridY: 1 }  // 1x1
+            ]
+        },
+        {
+            name: "Центр 1x2",
+            cells: [
+                { id: "A", type: 0, variant: 0, gridX: 0, gridY: 0 },
+                { id: "B", type: 2, variant: 0, gridX: 1, gridY: 0 }, // 1x2 (по центру)
+                { id: "C", type: 0, variant: 2, gridX: 2, gridY: 0 },
+                { id: "D", type: 0, variant: 3, gridX: 0, gridY: 1 },
+                { id: "E", type: 0, variant: 5, gridX: 2, gridY: 1 }
+            ]
+        },
+        {
+            name: "Широкие панели",
+            cells: [
+                { id: "A", type: 1, variant: 0, gridX: 0, gridY: 0 }, // 2x1
+                { id: "B", type: 2, variant: 1, gridX: 2, gridY: 0 }, // 1x2
+                { id: "C", type: 1, variant: 2, gridX: 0, gridY: 1 }  // 2x1
+            ]
+        }
+    ]
+};
+
+let currentAspect = '3x3';
+let currentPresetIndex = 0;
+let presetData, presetTexture;
+
+// ==========================================
+// 1.5 ЛОКАЛИЗАЦИЯ И ЯЗЫК
+// ==========================================
+let currentLang = 'ru';
+
+const i18n = {
+    ru: {
+        howItWorks: "Как это работает?",
+        desc1: "<strong class=\"text-white\">Display System</strong> — это комбинаторная система для рендеринга дисплеев со сложной сеткой в мире игры за 1 вызов отрисовки.",
+        genTitle: "Генерация пресетов (Houdini)",
+        genDesc: "Для получения предсказуемого контроля пиксельные пресеты создаются вручную — ячейки раскрашиваются разной яркостью. Далее в <strong>Houdini</strong> ячейки отделяются на основе разницы яркости. Каждая считает свой размер, позицию, аспект и индекс, после чего данные запаковываются в <strong>.exr</strong> текстуру.",
+        packTitle: "Упаковка данных:",
+        packDesc: "Т.к. формат .exr может хранить значения более единицы, в каждый канал RGB текстуры запакованы сразу <strong>2 значения</strong> (в целую и дробную часть). Например, позиция по X и Y может быть записана как <code class=\"bg-blue-950 px-1 rounded\">3.2</code>.",
+        shaderTitle: "Распаковка в Шейдере",
+        rDesc: "Позиция ячейки в пресете. Отвечает за отступ, чтобы сместить отсчет координат на 0 в каждой ячейке.",
+        gDesc: "Размер ячейки. Трансформирует координаты для приведения UV к 0-1. Указывает, насколько сдвинуть UV по вертикали для следующего варианта.",
+        bDesc: "<strong>Аспект</strong>: Отвечает за позицию нулевого варианта на атласе. В шейдере ему назначается базовый отступ по uv.xy.<br><br><strong>Index</strong>: Уникальный номер, позволяющий менять вариант ячейки из блюпринта используя cpd (двигаться по вертикали в атласе).",
+        udimDesc: "Изначально система создавалась под <strong>UDIM</strong>, поэтому все значения отступов были целочисленными. Из-за лимита UDIM на количество вариантов произошел переход к обычной виртуальной текстуре. Теперь UV нормализуются делением на общее число квадратов по обеим осям.",
+        usageTitle: "Использование в проекте",
+        usageDesc1: "Система вешается в виде компонента на дисплей в мире игры, который сам определяет по соотношению сторон статик меша экрана какой ближайший аспект. И художнику остается только выбрать из списка нужный сеттинг и визуал.",
+        usageDesc2: "Настройка контента выполняется либо кнопками рандомизации пресета и наполнения ячеек, либо при необходимости можно выбрать вручную номер пресета и номер варианта для каждой ячейки. Все остальное происходит под капотом в блюпринте компонента и отправляется в виде cpd данных в материал экрана.",
+        stat1: "текстурных атласов (разные сеттинги и локации)",
+        stat2: "варианта визуала (Голограмма, Стекло, Непрозрачный)",
+        stat3: "аспект или размер экрана самого дисплея",
+        stat4: "пресетов расположения ячеек под каждый аспект экрана",
+        stat5: "аспектов или размеров ячеек",
+        stat6: "вариантов в каждой ячейке",
+        statTotal: "= Бесконечная комбинаторика",
+        lblAtlasTitle: "Текстурный Атлас (Виртуальная текстура)",
+        lblAtlasDesc: "В памяти только использованные варианты",
+        lblScreenTitle: "Итоговый Экран",
+        lblScreenDesc: "Сборка фрагментным шейдером",
+        texture: "Текстура",
+        aspect: "Аспект",
+        preset: "Пресет",
+        settingsTitle: "Настройки",
+        cellContent: "Содержимое ячеек",
+        aspectSq: "3x3 (Квадрат)",
+        aspectWide: "3x2 (Широкий)",
+        presetStr: "Пресет",
+        cellStr: "Ячейка"
+    },
+    en: {
+        howItWorks: "How does it work?",
+        desc1: "<strong class=\"text-white\">Display System</strong> is a combinatorial system for rendering complex grid displays in the game world with a single draw call.",
+        genTitle: "Preset Generation (Houdini)",
+        genDesc: "For predictable control, pixel presets are created manually — cells are colored with varying brightness. Then, in <strong>Houdini</strong>, cells are separated based on brightness differences. Each calculates its size, position, aspect, and index, and the data is packed into an <strong>.exr</strong> texture.",
+        packTitle: "Data Packing:",
+        packDesc: "Since the .exr format can store values > 1, each RGB channel packs <strong>2 values</strong> (integer and fractional). For example, X and Y positions might be stored as <code class=\"bg-blue-950 px-1 rounded\">3.2</code>.",
+        shaderTitle: "Shader Unpacking",
+        rDesc: "Cell position in the preset. Handles the offset to reset local coordinates to 0 in each cell.",
+        gDesc: "Cell size. Transforms coordinates to map UVs to 0-1. Defines vertical UV shift for the next variant.",
+        bDesc: "<strong>Aspect</strong>: Sets the base variant position on the atlas. Assigned as a base UV offset in the shader.<br><br><strong>Index</strong>: A unique ID to switch cell variants via blueprint CPD (moving vertically in the atlas).",
+        udimDesc: "The system was originally built for <strong>UDIM</strong>, so offsets were integers. Due to UDIM limits on variant counts, it was migrated to standard virtual texturing. UVs are now normalized by dividing by the total grid squares.",
+        usageTitle: "In-Game Implementation",
+        usageDesc1: "The system is added as a component to an in-world display, automatically detecting the closest aspect ratio from the screen's static mesh. The artist simply selects the setting and visual style.",
+        usageDesc2: "Content setup is done via randomize buttons for presets and cell fills, or by manually picking a preset and variant per cell. The rest is processed under the hood in the Blueprint and sent as CPD data to the screen material.",
+        stat1: "texture atlases (different settings and locations)",
+        stat2: "visual variants (Hologram, Glass, Opaque)",
+        stat3: "aspects or display physical screen sizes",
+        stat4: "cell layout presets per screen aspect",
+        stat5: "cell aspects or sizes",
+        stat6: "variants per cell",
+        statTotal: "= Infinite Combinatorics",
+        lblAtlasTitle: "Texture Atlas (Virtual Texture)",
+        lblAtlasDesc: "Only used variants are loaded in memory",
+        lblScreenTitle: "Final Screen",
+        lblScreenDesc: "Assembled by the fragment shader",
+        texture: "Texture",
+        aspect: "Aspect",
+        preset: "Preset",
+        settingsTitle: "Settings",
+        cellContent: "Cell Content",
+        aspectSq: "3x3 (Square)",
+        aspectWide: "3x2 (Wide)",
+        presetStr: "Preset",
+        cellStr: "Cell"
+    }
+};
+
+const presetNames = {
+    ru: { "Асимметрия": "Асимметрия", "Сетка 1x1/1x2": "Сетка 1x1/1x2", "Основа 1x2": "Основа 1x2", "Компактный": "Компактный", "Центр 1x2": "Центр 1x2", "Широкие панели": "Широкие панели" },
+    en: { "Асимметрия": "Asymmetry", "Сетка 1x1/1x2": "Grid 1x1/1x2", "Основа 1x2": "Base 1x2", "Компактный": "Compact", "Центр 1x2": "Center 1x2", "Широкие панели": "Wide Panels" }
+};
+
+function updateLanguage() {
+    // Update simple texts and innerHTML
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        el.innerText = i18n[currentLang][el.getAttribute('data-i18n')];
+    });
+    document.querySelectorAll('[data-i18n-html]').forEach(el => {
+        el.innerHTML = i18n[currentLang][el.getAttribute('data-i18n-html')];
+    });
+
+    // Rebuild UI components that depend on language
+    populatePresets();
+    buildUI();
+}
+
+document.getElementById('lang-ru').addEventListener('click', () => {
+    currentLang = 'ru';
+    document.getElementById('lang-ru').classList.replace('text-neutral-400', 'text-white');
+    document.getElementById('lang-ru').classList.replace('hover:text-white', 'bg-neutral-700');
+    document.getElementById('lang-en').classList.replace('text-white', 'text-neutral-400');
+    document.getElementById('lang-en').classList.replace('bg-neutral-700', 'hover:text-white');
+    updateLanguage();
+});
+
+document.getElementById('lang-en').addEventListener('click', () => {
+    currentLang = 'en';
+    document.getElementById('lang-en').classList.replace('text-neutral-400', 'text-white');
+    document.getElementById('lang-en').classList.replace('hover:text-white', 'bg-neutral-700');
+    document.getElementById('lang-ru').classList.replace('text-white', 'text-neutral-400');
+    document.getElementById('lang-ru').classList.replace('bg-neutral-700', 'hover:text-white');
+    updateLanguage();
+});
+
+// ==========================================
+// 2. ИНИЦИАЛИЗАЦИЯ THREE.JS
+// ==========================================
+const wrapper = document.getElementById('canvas-wrapper');
+const container = document.getElementById('canvas-container');
+
+const getW = () => wrapper.clientWidth;
+const getH = () => wrapper.clientHeight;
+
+const scene = new THREE.Scene();
+
+const camSize = 14;
+const camera = new THREE.OrthographicCamera(-camSize, camSize, camSize, -camSize, 0.1, 100);
+camera.position.z = 10;
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(getW(), getH());
+updateCameraAspect();
+container.appendChild(renderer.domElement);
+
+function updateCameraAspect() {
+    const aspect = getW() / getH();
+    let currentCamSize = camSize;
+    if (aspect < 1.0) currentCamSize = camSize / aspect; 
+    
+    camera.left = -currentCamSize * aspect;
+    camera.right = currentCamSize * aspect;
+    camera.top = currentCamSize;
+    camera.bottom = -currentCamSize;
+    camera.updateProjectionMatrix();
+}
+
+// ==========================================
+// 3. ГЕНЕРАЦИЯ АТЛАСА (Sci-Fi UI Painter)
+// ==========================================
+const atlasCols = 5;
+const atlasRows = 6;
+const unit = 170;
+const atlasW = unit * atlasCols;
+const atlasH = unit * atlasRows;
+
+const cleanAtlasCanvas = document.createElement('canvas');
+cleanAtlasCanvas.width = atlasW;
+cleanAtlasCanvas.height = atlasH;
+const cleanCtx = cleanAtlasCanvas.getContext('2d');
+
+const baseAtlasCanvas = document.createElement('canvas');
+baseAtlasCanvas.width = atlasW;
+baseAtlasCanvas.height = atlasH;
+const baseCtx = baseAtlasCanvas.getContext('2d');
+
+const uiAtlasCanvas = document.createElement('canvas');
+uiAtlasCanvas.width = atlasW;
+uiAtlasCanvas.height = atlasH;
+const uiCtx = uiAtlasCanvas.getContext('2d');
+
+let isDebugMode = false; // Текущий режим атласа (Sci-Fi по умолчанию)
+
+// Процедурный генератор "реалистичного" атласа (чтобы не грузить внешние картинки)
+function drawBaseAtlas() {
+    if (!isDebugMode) {
+        // Темно-серый фон текстуры (Sci-Fi)
+        cleanCtx.fillStyle = '#0a0a0a'; 
+        cleanCtx.fillRect(0, 0, atlasW, atlasH);
+        
+        // Техническая сетка на фоне
+        cleanCtx.strokeStyle = 'rgba(56, 189, 248, 0.05)';
+        cleanCtx.lineWidth = 1;
+        for(let i=0; i<=atlasCols; i++) {
+            const val = i * unit;
+            cleanCtx.beginPath(); cleanCtx.moveTo(val, 0); cleanCtx.lineTo(val, atlasH); cleanCtx.stroke();
+        }
+        for(let i=0; i<=atlasRows; i++) {
+            const val = i * unit;
+            cleanCtx.beginPath(); cleanCtx.moveTo(0, val); cleanCtx.lineTo(atlasW, val); cleanCtx.stroke();
+        }
+    } else {
+        // Темно-серый фон текстуры (Debug)
+        cleanCtx.fillStyle = '#171717'; 
+        cleanCtx.fillRect(0, 0, atlasW, atlasH);
+        
+        // Сетка
+        cleanCtx.strokeStyle = 'rgba(255,255,255,0.03)';
+        cleanCtx.lineWidth = 1;
+        for(let i=0; i<=atlasCols; i++) {
+            const val = i * unit;
+            cleanCtx.beginPath(); cleanCtx.moveTo(val, 0); cleanCtx.lineTo(val, atlasH); cleanCtx.stroke();
+        }
+        for(let i=0; i<=atlasRows; i++) {
+            const val = i * unit;
+            cleanCtx.beginPath(); cleanCtx.moveTo(0, val); cleanCtx.lineTo(atlasW, val); cleanCtx.stroke();
+        }
+    }
+
+    const drawDebugPanel = (type, variant, x, y, w, h) => {
+        const px = x * unit; const py = y * unit; const pw = w * unit; const ph = h * unit;
+        cleanCtx.fillStyle = COLORS[type].bg;
+        cleanCtx.fillRect(px, py, pw, ph);
+        
+        cleanCtx.strokeStyle = COLORS[type].border; 
+        cleanCtx.lineWidth = 2;
+        cleanCtx.strokeRect(px + 1, py + 1, pw - 2, ph - 2);
+        
+        cleanCtx.fillStyle = "white";
+        cleanCtx.font = "bold 74px 'Inter', sans-serif";
+        cleanCtx.textAlign = "center";
+        cleanCtx.textBaseline = "middle";
+        
+        cleanCtx.shadowColor = "rgba(0,0,0,0.5)";
+        cleanCtx.shadowBlur = 4;
+        
+        cleanCtx.fillText(`${variant}`, px + pw/2, py + ph/2);
+        cleanCtx.shadowBlur = 0;
+    };
+
+    const drawSciFiPanel = (type, variant, x, y, w, h) => {
+        const px = x * unit; const py = y * unit;
+        const pw = w * unit; const ph = h * unit;
+        const pad = 8;
+
+        // Цветная полупрозрачная обводка для связи с легендой
+        cleanCtx.globalAlpha = 0.7;
+        cleanCtx.strokeStyle = COLORS[type].border;
+        cleanCtx.lineWidth = 2;
+        cleanCtx.strokeRect(px + 2, py + 2, pw - 4, ph - 4);
+        cleanCtx.globalAlpha = 1.0;
+
+        // Основная плашка (градиент)
+        const grad = cleanCtx.createLinearGradient(px, py, px, py + ph);
+        grad.addColorStop(0, '#262626');
+        grad.addColorStop(1, '#171717');
+        cleanCtx.fillStyle = grad;
+        cleanCtx.fillRect(px + pad, py + pad, pw - pad*2, ph - pad*2);
+
+        // Внутреннее свечение/скос
+        cleanCtx.strokeStyle = '#404040';
+        cleanCtx.lineWidth = 2;
+        cleanCtx.strokeRect(px + pad + 2, py + pad + 2, pw - pad*2 - 4, ph - pad*2 - 4);
+
+        // Рисуем специфичную графику в зависимости от размера ячейки
+        if (type === 0) {
+            // 1x1: Иконки навыков или предметов
+            const cx = px + pw/2; const cy = py + ph/2;
+            const hue = (variant * 55) % 360;
+            
+            // Внешний контур иконки
+            cleanCtx.strokeStyle = '#404040';
+            cleanCtx.lineWidth = 3;
+            cleanCtx.beginPath(); cleanCtx.arc(cx, cy, 42, 0, Math.PI*2); cleanCtx.stroke();
+            
+            // Внутренняя заливка-акцент
+            cleanCtx.fillStyle = `hsla(${hue}, 40%, 55%, 0.9)`;
+            cleanCtx.beginPath();
+            if (variant % 3 === 0) {
+                cleanCtx.arc(cx, cy, 26, 0, Math.PI*2);
+            } else if (variant % 3 === 1) {
+                cleanCtx.moveTo(cx, cy - 29); cleanCtx.lineTo(cx + 29, cy + 20); cleanCtx.lineTo(cx - 29, cy + 20);
+            } else {
+                cleanCtx.fillRect(cx - 24, cy - 24, 48, 48);
+            }
+            cleanCtx.fill();
+            
+        } else if (type === 1) {
+            // 2x1: Полоски ХП/Маны или Кнопки с текстом
+            cleanCtx.fillStyle = '#0a0a0a'; // Фон бара
+            cleanCtx.fillRect(px + pad + 20, py + ph/2 - 16, pw - pad*2 - 40, 32);
+            
+            const hue = variant % 2 === 0 ? 0 : 200; // Красный или Синий
+            cleanCtx.fillStyle = `hsla(${hue}, 45%, 45%, 0.8)`;
+            const fillWidth = (pw - pad*2 - 48) * (0.3 + (variant%5)*0.15);
+            cleanCtx.fillRect(px + pad + 24, py + ph/2 - 12, fillWidth, 24);
+            
+            // Имитация текста над баром
+            cleanCtx.fillStyle = '#525252';
+            cleanCtx.fillRect(px + pad + 20, py + 20, 80, 10);
+
+        } else if (type === 2) {
+            // 1x2: Карточки персонажей (Портреты)
+            const cx = px + pw/2;
+            // Фон шапки
+            cleanCtx.fillStyle = '#262626';
+            cleanCtx.fillRect(px + pad + 2, py + pad + 2, pw - pad*2 - 4, 53);
+            
+            // Силуэт
+            cleanCtx.fillStyle = `hsla(${variant * 40}, 15%, 35%, 1)`;
+            
+            // Разная форма головы в зависимости от варианта
+            if (variant === 0) {
+                // Круг
+                cleanCtx.beginPath(); cleanCtx.arc(cx, py + 133, 33, 0, Math.PI*2); cleanCtx.fill();
+            } else if (variant === 1) {
+                // Треугольник
+                cleanCtx.beginPath(); 
+                cleanCtx.moveTo(cx, py + 100); 
+                cleanCtx.lineTo(cx + 33, py + 166); 
+                cleanCtx.lineTo(cx - 33, py + 166); 
+                cleanCtx.fill();
+            } else if (variant === 2) {
+                // Квадрат
+                cleanCtx.fillRect(cx - 33, py + 100, 66, 66);
+            } else {
+                cleanCtx.beginPath(); cleanCtx.arc(cx, py + 133, 33, 0, Math.PI*2); cleanCtx.fill();
+            }
+            
+            // Плечи (одинаковые для всех)
+            cleanCtx.beginPath(); cleanCtx.arc(cx, py + 266, 66, Math.PI, Math.PI*2); cleanCtx.fill();
+            
+            // Имитация статов внизу
+            cleanCtx.fillStyle = '#404040';
+            cleanCtx.fillRect(cx - 40, py + ph - 53, 80, 8);
+            cleanCtx.fillRect(cx - 40, py + ph - 33, 53, 8);
+
+        } else if (type === 3) {
+            // 1x3: Длинные боковые панели
+            if (variant === 0) {
+                // Вариант 0: Панель Инвентаря
+                cleanCtx.fillStyle = '#171717';
+                cleanCtx.strokeStyle = '#262626';
+                cleanCtx.lineWidth = 2;
+                for(let i=0; i<6; i++) {
+                    const slotY = py + pad + 26 + i * 73;
+                    cleanCtx.fillRect(px + pw/2 - 33, slotY, 66, 66);
+                    cleanCtx.strokeRect(px + pw/2 - 33, slotY, 66, 66);
+                    
+                    // Рандомный лут в слотах
+                    if (i % 2 === 0) {
+                        cleanCtx.fillStyle = 'rgba(14, 165, 233, 0.4)'; // Обычный предмет (синий)
+                        cleanCtx.fillRect(px + pw/2 - 13, slotY + 20, 26, 26);
+                        cleanCtx.fillStyle = '#171717';
+                    } else if (i === 3) {
+                        cleanCtx.fillStyle = 'rgba(239, 68, 68, 0.4)'; // Эпик предмет (красный)
+                        cleanCtx.fillRect(px + pw/2 - 13, slotY + 20, 26, 26);
+                        cleanCtx.fillStyle = '#171717';
+                    }
+                }
+            } else if (variant === 1) {
+                // Вариант 1: Системный монитор / Графики
+                cleanCtx.fillStyle = '#171717';
+                cleanCtx.fillRect(px + pad + 20, py + pad + 26, pw - pad*2 - 40, 120); // Экран
+                
+                // Осциллограмма
+                cleanCtx.beginPath();
+                cleanCtx.strokeStyle = 'rgba(16, 185, 129, 0.6)'; // Изумрудный график
+                cleanCtx.lineWidth = 2;
+                for(let i=0; i<pw - pad*2 - 40; i+=3) {
+                    const gx = px + pad + 20 + i;
+                    const gy = py + pad + 86 + Math.sin(i * 0.15) * 26; // Волна
+                    if (i === 0) cleanCtx.moveTo(gx, gy);
+                    else cleanCtx.lineTo(gx, gy);
+                }
+                cleanCtx.stroke();
+                
+                // Имитация списка параметров
+                cleanCtx.fillStyle = '#404040';
+                for(let i=0; i<5; i++) {
+                    const rowY = py + pad + 186 + i * 53;
+                    cleanCtx.fillRect(px + pad + 20, rowY, 26, 26); // Квадратная иконка
+                    
+                    // Детерминированная "случайная" ширина для строк
+                    const textWidth = (pw - pad*2 - 80) * (0.4 + (Math.sin(i * 10) * 0.5 + 0.5) * 0.5);
+                    cleanCtx.fillRect(px + pad + 60, rowY + 3, textWidth, 8); // Текст 1
+                    cleanCtx.fillRect(px + pad + 60, rowY + 16, 40, 5); // Текст 2 (мелкий)
+                }
+            }
+        }
+    };
+
+    const drawFn = isDebugMode ? drawDebugPanel : drawSciFiPanel;
+
+    for(let i=0; i<=TYPES[0].maxVars; i++) drawFn(0, i, 0, i, 1, 1);
+    for(let i=0; i<=TYPES[1].maxVars; i++) drawFn(1, i, 1, i, 2, 1);
+    for(let i=0; i<=TYPES[2].maxVars; i++) drawFn(2, i, 3, i * 2, 1, 2);
+    for(let i=0; i<=TYPES[3].maxVars; i++) drawFn(3, i, 4, i * 3, 1, 3);
+
+    // Копируем на базовый атлас для итогового экрана и рисуем номера размера 2x
+    baseCtx.clearRect(0, 0, atlasW, atlasH);
+    baseCtx.drawImage(cleanAtlasCanvas, 0, 0);
+    drawNumbers(baseCtx, 2);
+}
+
+// Отрисовка номеров в левом нижнем углу с заданным масштабом
+function drawNumbers(ctx, scale) {
+    if (isDebugMode) return;
+    ctx.fillStyle = "rgba(255, 255, 255, 0.3)"; 
+    ctx.font = `bold ${12 * scale}px monospace`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "bottom";
+    ctx.shadowColor = "rgba(0,0,0,0.8)";
+    ctx.shadowBlur = 4;
+
+    const drawNum = (type, variant, x, y, w, h) => {
+        const px = x * unit; const py = y * unit; const ph = h * unit;
+        const pad = 8;
+        ctx.fillText(`${variant}`, px + pad + 8, py + ph - pad - 6);
+    };
+
+    for(let i=0; i<=TYPES[0].maxVars; i++) drawNum(0, i, 0, i, 1, 1);
+    for(let i=0; i<=TYPES[1].maxVars; i++) drawNum(1, i, 1, i, 2, 1);
+    for(let i=0; i<=TYPES[2].maxVars; i++) drawNum(2, i, 3, i * 2, 1, 2);
+    for(let i=0; i<=TYPES[3].maxVars; i++) drawNum(3, i, 4, i * 3, 1, 3);
+    
+    ctx.shadowBlur = 0; // Сброс тени
+}
+
+// Отрисовка UI выделения (Слева)
+function updateUIAtlas() {
+    uiCtx.clearRect(0, 0, atlasW, atlasH);
+    uiCtx.drawImage(cleanAtlasCanvas, 0, 0); // Берем ЧИСТЫЙ холст без номеров
+
+    const cells = PRESETS[currentAspect][currentPresetIndex].cells;
+
+    // Рисуем циановое свечение над выбранными элементами
+    cells.forEach(cell => {
+        const typeInfo = TYPES[cell.type];
+        let x = 0;
+        if (cell.type === 1) x = 1;
+        if (cell.type === 2) x = 3;
+        if (cell.type === 3) x = 4;
+        
+        const y = cell.variant * typeInfo.h;
+        const w = typeInfo.w;
+        const h = typeInfo.h;
+
+        // Нежная полупрозрачная заливка
+        uiCtx.fillStyle = "rgba(56, 189, 248, 0.15)"; 
+        uiCtx.fillRect(x * unit, y * unit, w * unit, h * unit);
+        
+        // Яркая неоновая рамка выделения
+        uiCtx.strokeStyle = "rgba(56, 189, 248, 0.8)"; 
+        uiCtx.lineWidth = 3;
+        uiCtx.strokeRect(x * unit + 3, y * unit + 3, w * unit - 6, h * unit - 6);
+    });
+
+    // Рисуем номера размера 3x для экрана-атласа
+    drawNumbers(uiCtx, 3);
+}
+
+drawBaseAtlas();
+
+const baseAtlasTexture = new THREE.CanvasTexture(baseAtlasCanvas);
+baseAtlasTexture.magFilter = THREE.LinearFilter;
+baseAtlasTexture.minFilter = THREE.LinearMipmapLinearFilter;
+
+const uiAtlasTexture = new THREE.CanvasTexture(uiAtlasCanvas);
+uiAtlasTexture.magFilter = THREE.LinearFilter;
+uiAtlasTexture.minFilter = THREE.LinearMipmapLinearFilter;
+
+// ==========================================
+// 4. ПИКСЕЛЬНАЯ ТЕКСТУРА (DataTexture)
+// ==========================================
+function initPresetTexture() {
+    const cols = GRIDS[currentAspect].cols;
+    const rows = GRIDS[currentAspect].rows;
+    
+    presetData = new Uint8Array(cols * rows * 4);
+    presetTexture = new THREE.DataTexture(presetData, cols, rows, THREE.RGBAFormat);
+    presetTexture.magFilter = THREE.NearestFilter;
+    presetTexture.minFilter = THREE.NearestFilter;
+    
+    if (displaySystemShader && displaySystemShader.uniforms) {
+        displaySystemShader.uniforms.tPreset.value = presetTexture;
+        displaySystemShader.uniforms.uGridSize.value.set(cols, rows);
+    }
+
+    const canvas = document.getElementById('ui-preset-canvas');
+    if (canvas) {
+        canvas.width = 60;
+        canvas.height = 60 * (rows / cols);
+    }
+    
+    if (meshScreen) {
+        meshScreen.scale.set(12, 12 * (rows / cols), 1);
+    }
+
+    document.getElementById('label-screen-aspect').innerText = currentAspect;
+}
+
+function updatePresetTexture() {
+    presetData.fill(0);
+    const cells = PRESETS[currentAspect][currentPresetIndex].cells;
+    const cols = GRIDS[currentAspect].cols;
+    const rows = GRIDS[currentAspect].rows;
+    
+    cells.forEach(cell => {
+        const typeInfo = TYPES[cell.type];
+        for(let dy=0; dy<typeInfo.h; dy++) {
+            for(let dx=0; dx<typeInfo.w; dx++) {
+                const gx = cell.gridX + dx;
+                const gy = cell.gridY + dy;
+                const webglY = (rows - 1) - gy; 
+                const index = (webglY * cols + gx) * 4;
+                
+                presetData[index + 0] = cell.type;
+                presetData[index + 1] = cell.variant;
+                presetData[index + 2] = dx;
+                presetData[index + 3] = (typeInfo.h - 1) - dy;
+            }
+        }
+    });
+    presetTexture.needsUpdate = true;
+    drawUIPresetCanvas();
+}
+
+function drawUIPresetCanvas() {
+    const canvas = document.getElementById('ui-preset-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const cells = PRESETS[currentAspect][currentPresetIndex].cells;
+    const cols = GRIDS[currentAspect].cols;
+    
+    const cellSize = 60 / cols; // = 20
+
+    ctx.fillStyle = '#171717';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    cells.forEach(cell => {
+        const typeInfo = TYPES[cell.type];
+        ctx.fillStyle = COLORS[cell.type].bg;
+
+        for(let dy=0; dy<typeInfo.h; dy++) {
+            for(let dx=0; dx<typeInfo.w; dx++) {
+                const gx = cell.gridX + dx;
+                const gy = cell.gridY + dy;
+                
+                ctx.fillRect(gx * cellSize, gy * cellSize, cellSize, cellSize);
+                
+                ctx.strokeStyle = COLORS[cell.type].border;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(gx * cellSize + 1, gy * cellSize + 1, cellSize - 2, cellSize - 2);
+            }
+        }
+    });
+}
+
+// ==========================================
+// 5. ШЕЙДЕРЫ И МАТЕРИАЛЫ
+// ==========================================
+const displaySystemShader = {
+    uniforms: {
+        tPreset: { value: null }, // Initialize later
+        tAtlas: { value: baseAtlasTexture },
+        uGridSize: { value: new THREE.Vector2(3, 3) }
+    },
+    vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: `
+        uniform sampler2D tPreset;
+        uniform sampler2D tAtlas;
+        uniform vec2 uGridSize;
+        varying vec2 vUv;
+
+        void main() {
+            vec4 data = texture2D(tPreset, vUv);
+            int type = int(data.r * 255.0 + 0.5);
+            int variant = int(data.g * 255.0 + 0.5);
+            int localX = int(data.b * 255.0 + 0.5);
+            int localY = int(data.a * 255.0 + 0.5);
+
+            float w = 1.0; float h = 1.0; float atlasX = 0.0;
+            if (type == 0) { w = 1.0; h = 1.0; atlasX = 0.0; }
+            if (type == 1) { w = 2.0; h = 1.0; atlasX = 1.0; }
+            if (type == 2) { w = 1.0; h = 2.0; atlasX = 3.0; }
+            if (type == 3) { w = 1.0; h = 3.0; atlasX = 4.0; }
+
+            float atlasY = float(variant) * h;
+            vec2 cellFrac = fract(vUv * uGridSize);
+            vec2 cellUV = vec2((float(localX) + cellFrac.x) / w, (float(localY) + cellFrac.y) / h);
+
+            float u = (atlasX + cellUV.x * w) / 5.0;
+            float v = 1.0 - (atlasY + (1.0 - cellUV.y) * h) / 6.0;
+
+            vec4 color = texture2D(tAtlas, vec2(u, v));
+
+            float border = 0.01;
+            if (cellFrac.x < border || cellFrac.y < border || cellFrac.x > 1.0-border || cellFrac.y > 1.0-border) {
+                color.rgb *= 0.7; 
+            }
+            gl_FragColor = color;
+        }
+    `
+};
+
+// ==========================================
+// 6. СОЗДАНИЕ 3D ОБЪЕКТОВ
+// ==========================================
+const planeGeometry = new THREE.PlaneGeometry(1, 1);
+
+// Экран 1: Атлас (Слева)
+const matAtlas = new THREE.MeshBasicMaterial({ map: uiAtlasTexture });
+const meshAtlas = new THREE.Mesh(planeGeometry, matAtlas);
+meshAtlas.scale.set(10, 12, 1);
+meshAtlas.position.set(-7.5, 1.5, 0); // Отодвинули левее
+scene.add(meshAtlas);
+
+let meshScreen; // Declare early
+
+// Экран 2: Итоговый экран (Справа)
+const matScreen = new THREE.ShaderMaterial(displaySystemShader);
+meshScreen = new THREE.Mesh(planeGeometry, matScreen);
+meshScreen.scale.set(12, 12, 1); // Будет обновлено в initPresetTexture
+meshScreen.position.set(6.5, 1.5, 0); // Отодвинули правее
+scene.add(meshScreen);
+
+// Оверлеи для эффектов Hover и Click на итоговом экране
+const overlayGeo = new THREE.PlaneGeometry(1, 1);
+const hoverMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending, depthWrite: false });
+const hoverMesh = new THREE.Mesh(overlayGeo, hoverMat);
+hoverMesh.position.z = 0.01;
+meshScreen.add(hoverMesh); // Добавляем как дочерний объект экрана
+
+const clickMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending, depthWrite: false });
+const clickMesh = new THREE.Mesh(overlayGeo, clickMat);
+clickMesh.position.z = 0.02;
+meshScreen.add(clickMesh);
+
+
+// ==========================================
+// 7. ИНТЕРФЕЙС И СОБЫТИЯ
+// ==========================================
+const aspectSelect = document.getElementById('aspect-select');
+const presetSelect = document.getElementById('preset-select');
+const slidersContainer = document.getElementById('sliders-container');
+const cellLabelsContainer = document.getElementById('cell-labels');
+
+function populatePresets() {
+    presetSelect.innerHTML = '';
+    PRESETS[currentAspect].forEach((preset, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        const pName = presetNames[currentLang][preset.name] || preset.name;
+        opt.innerText = `${i18n[currentLang].presetStr} ${idx + 1} (${pName})`;
+        presetSelect.appendChild(opt);
+    });
+    presetSelect.value = currentPresetIndex;
+}
+
+function buildUI() {
+    slidersContainer.innerHTML = '';
+    cellLabelsContainer.innerHTML = ''; // Очищаем контейнер букв на экране
+    
+    const cells = PRESETS[currentAspect][currentPresetIndex].cells;
+    
+    cells.forEach((cell, idx) => {
+        const typeInfo = TYPES[cell.type];
+        const wrapperDiv = document.createElement('div');
+        wrapperDiv.className = 'bg-neutral-950/50 p-3.5 rounded-xl border border-neutral-800 hover:border-neutral-700 transition-colors';
+        
+        const header = document.createElement('div');
+        header.className = 'flex justify-between items-center mb-3';
+        
+        const titleContainer = document.createElement('div');
+        titleContainer.className = 'flex items-center gap-2';
+        
+        const colorDot = document.createElement('span');
+        colorDot.className = 'w-2.5 h-2.5 rounded-sm border';
+        colorDot.style.backgroundColor = COLORS[cell.type].bg;
+        colorDot.style.borderColor = COLORS[cell.type].border;
+        
+        const title = document.createElement('span');
+        title.className = 'text-sm font-semibold text-neutral-200';
+        title.innerText = `${i18n[currentLang].cellStr} ${cell.id}`; // Заголовок ячейки в панели
+        
+        titleContainer.appendChild(colorDot);
+        titleContainer.appendChild(title);
+        
+        const valueDisplay = document.createElement('span');
+        valueDisplay.className = 'text-xs bg-neutral-900 px-2.5 py-1 rounded-md font-mono text-cyan-400 border border-neutral-700';
+        valueDisplay.innerText = `${cell.variant}`;
+        
+        header.appendChild(titleContainer);
+        header.appendChild(valueDisplay);
+        
+        const slider = document.createElement('input');
+        slider.type = 'range';
+        slider.min = 0;
+        slider.max = typeInfo.maxVars;
+        slider.value = cell.variant;
+        
+        slider.oninput = (e) => {
+            cell.variant = parseInt(e.target.value);
+            valueDisplay.innerText = `${cell.variant}`;
+            updatePresetTexture();
+            updateUIAtlas();
+            uiAtlasTexture.needsUpdate = true;
+        };
+
+        wrapperDiv.appendChild(header);
+        wrapperDiv.appendChild(slider);
+        slidersContainer.appendChild(wrapperDiv);
+
+        // Создаем HTML лейбл с буквой для итогового экрана
+        const screenLabel = document.createElement('div');
+        screenLabel.id = `cell-label-${idx}`;
+        screenLabel.className = 'absolute text-emerald-400 font-bold font-mono text-xs bg-neutral-950/80 px-1.5 py-0.5 rounded border border-emerald-500/30 backdrop-blur-sm';
+        screenLabel.innerText = cell.id;
+        // Оффсет для центрирования по правому нижнему углу с небольшим отступом
+        screenLabel.style.transform = 'translate(calc(-100% - 8px), calc(-100% - 8px))';
+        cellLabelsContainer.appendChild(screenLabel);
+    });
+}
+
+aspectSelect.addEventListener('change', (e) => {
+    currentAspect = e.target.value;
+    currentPresetIndex = 0;
+    populatePresets();
+    initPresetTexture();
+    buildUI();
+    updatePresetTexture();
+    updateUIAtlas();
+    updateLabels();
+});
+
+presetSelect.addEventListener('change', (e) => {
+    currentPresetIndex = parseInt(e.target.value);
+    buildUI();
+    updatePresetTexture();
+    updateUIAtlas();
+    uiAtlasTexture.needsUpdate = true;
+});
+
+// Primary initialization
+initPresetTexture();
+populatePresets();
+buildUI();
+updatePresetTexture();
+updateUIAtlas();
+
+// Обновление HTML лейблов
+function updateLabels() {
+    const lblAtlas = document.getElementById('label-atlas');
+    const lblScreen = document.getElementById('label-screen');
+    
+    const updatePos = (mesh, element, offsetY) => {
+        const vector = new THREE.Vector3();
+        vector.setFromMatrixPosition(mesh.matrixWorld);
+        vector.y += offsetY;
+        vector.project(camera);
+        
+        const w = getW();
+        const h = getH();
+        const x = (vector.x * 0.5 + 0.5) * w;
+        const y = -(vector.y * 0.5 - 0.5) * h;
+        
+        element.style.left = `${x}px`;
+        element.style.top = `${y}px`;
+    };
+
+    // Поднимаем подписи выше (с 6.8 до 8.0)
+    updatePos(meshAtlas, lblAtlas, 8.0);
+    updatePos(meshScreen, lblScreen, 8.0);
+
+    // Обновляем позиции букв (A, B, C...) для ячеек итогового экрана
+    const cells = PRESETS[currentAspect][currentPresetIndex].cells;
+    const cols = GRIDS[currentAspect].cols;
+    const rows = GRIDS[currentAspect].rows;
+
+    cells.forEach((cell, idx) => {
+        const lbl = document.getElementById(`cell-label-${idx}`);
+        if (!lbl) return;
+
+        const typeInfo = TYPES[cell.type];
+        
+        // Находим правый нижний угол ячейки в локальных координатах плоскости (-0.5 .. 0.5)
+        const lx = -0.5 + (cell.gridX + typeInfo.w) / cols;
+        const ly = 0.5 - (cell.gridY + typeInfo.h) / rows;
+        
+        const vector = new THREE.Vector3(lx, ly, 0);
+        vector.applyMatrix4(meshScreen.matrixWorld); // Переводим в мировые координаты экрана
+        vector.project(camera); // Проецируем на 2D экран
+        
+        const w = getW();
+        const h = getH();
+        const x = (vector.x * 0.5 + 0.5) * w;
+        const y = -(vector.y * 0.5 - 0.5) * h;
+        
+        lbl.style.left = `${x}px`;
+        lbl.style.top = `${y}px`;
+    });
+}
+
+// Ресайз
+window.addEventListener('resize', () => {
+    renderer.setSize(getW(), getH());
+    updateCameraAspect();
+    updateLabels();
+});
+
+// ==========================================
+// 7.5 ИНТЕРАКТИВНОСТЬ (Клик по ячейкам и Dice)
+// ==========================================
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+let hoverTargetOpacity = 0.0;
+let hoveredCellId = null;
+
+// Рандомизация одной ячейки по клику и эффект клика
+container.addEventListener('mousedown', (event) => {
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObject(meshScreen);
+
+    if (intersects.length > 0) {
+        const cols = GRIDS[currentAspect].cols;
+        const rows = GRIDS[currentAspect].rows;
+
+        const uv = intersects[0].uv;
+        const gx = Math.floor(uv.x * cols);
+        const webglY = Math.floor(uv.y * rows);
+        const gy = (rows - 1) - webglY; // Переводим WebGL Y (снизу-вверх) в Grid Y (сверху-вниз)
+
+        const cells = PRESETS[currentAspect][currentPresetIndex].cells;
+        const clickedCell = cells.find(c => {
+            const typeInfo = TYPES[c.type];
+            return gx >= c.gridX && gx < c.gridX + typeInfo.w &&
+                   gy >= c.gridY && gy < c.gridY + typeInfo.h;
+        });
+
+        if (clickedCell) {
+            // Запускаем эффект яркой вспышки при клике
+            clickMat.opacity = 0.08;
+
+            const typeInfo = TYPES[clickedCell.type];
+            if (typeInfo.maxVars > 0) {
+                let newVariant = clickedCell.variant;
+                // Гарантированно выбираем новый вариант, чтобы визуально был отклик
+                while (newVariant === clickedCell.variant) {
+                    newVariant = Math.floor(Math.random() * (typeInfo.maxVars + 1));
+                }
+                clickedCell.variant = newVariant;
+                
+                // Пересобираем UI чтобы ползунок обновился
+                buildUI();
+                updatePresetTexture();
+                updateUIAtlas();
+                uiAtlasTexture.needsUpdate = true;
+            }
+        }
+    }
+});
+
+// Смена курсора и эффект Hover при наведении на итоговый экран
+container.addEventListener('mousemove', (event) => {
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObject(meshScreen);
+    
+    if (intersects.length > 0) {
+        const cols = GRIDS[currentAspect].cols;
+        const rows = GRIDS[currentAspect].rows;
+
+        const uv = intersects[0].uv;
+        const gx = Math.floor(uv.x * cols);
+        const webglY = Math.floor(uv.y * rows);
+        const gy = (rows - 1) - webglY;
+
+        const cells = PRESETS[currentAspect][currentPresetIndex].cells;
+        const intersectedCell = cells.find(c => {
+            const typeInfo = TYPES[c.type];
+            return gx >= c.gridX && gx < c.gridX + typeInfo.w &&
+                   gy >= c.gridY && gy < c.gridY + typeInfo.h;
+        });
+
+        if (intersectedCell) {
+            container.style.cursor = 'pointer';
+            hoverTargetOpacity = 0.04; // Устанавливаем целевую прозрачность для ховера
+
+            if (hoveredCellId !== intersectedCell.id) {
+                hoveredCellId = intersectedCell.id;
+                const typeInfo = TYPES[intersectedCell.type];
+                
+                // Вычисляем локальные координаты центра ячейки относительно экрана (от -0.5 до 0.5)
+                const lx = -0.5 + (intersectedCell.gridX + typeInfo.w / 2) / cols;
+                const ly = 0.5 - (intersectedCell.gridY + typeInfo.h / 2) / rows;
+                
+                // Подгоняем размеры и позицию hover-меша
+                hoverMesh.scale.set(typeInfo.w / cols, typeInfo.h / rows, 1);
+                hoverMesh.position.set(lx, ly, 0.01);
+                
+                // Click-меш следует за hover-мешем
+                clickMesh.scale.copy(hoverMesh.scale);
+                clickMesh.position.copy(hoverMesh.position);
+                clickMesh.position.z = 0.02;
+            }
+        } else {
+            container.style.cursor = 'default';
+            hoverTargetOpacity = 0.0;
+            hoveredCellId = null;
+        }
+    } else {
+        container.style.cursor = 'default';
+        hoverTargetOpacity = 0.0;
+        hoveredCellId = null;
+    }
+});
+
+// Кнопка Dice (Рандомизировать все)
+document.getElementById('randomize-all-btn').addEventListener('click', () => {
+    const cells = PRESETS[currentAspect][currentPresetIndex].cells;
+    cells.forEach(cell => {
+        const typeInfo = TYPES[cell.type];
+        if (typeInfo.maxVars > 0) {
+            cell.variant = Math.floor(Math.random() * (typeInfo.maxVars + 1));
+        }
+    });
+    
+    // Анимация вращения иконки
+    const btnIcon = document.querySelector('#randomize-all-btn svg');
+    btnIcon.style.transition = 'transform 0.3s ease';
+    btnIcon.style.transform = `rotate(${Math.random() > 0.5 ? 180 : -180}deg)`;
+    setTimeout(() => { btnIcon.style.transition = 'none'; btnIcon.style.transform = 'rotate(0deg)'; }, 300);
+
+    buildUI();
+    updatePresetTexture();
+    updateUIAtlas();
+    uiAtlasTexture.needsUpdate = true;
+});
+
+// ==========================================
+// 8. РЕНДЕР ЦИКЛ
+// ==========================================
+function animate() {
+    requestAnimationFrame(animate);
+    
+    // Плавная анимация эффектов Hover и Click
+    hoverMat.opacity += (hoverTargetOpacity - hoverMat.opacity) * 0.25;
+    clickMat.opacity += (0.0 - clickMat.opacity) * 0.6; // Быстрое затухание вспышки
+    
+    updateLabels();
+    renderer.render(scene, camera);
+}
+animate();
+
+// ==========================================
+// 9. ЛОГИКА ИНТЕРФЕЙСА (Сворачивание)
+// ==========================================
+const infoHeader = document.getElementById('info-header');
+const infoContent = document.getElementById('info-content');
+const infoIcon = document.getElementById('info-icon');
+
+infoHeader.addEventListener('click', () => {
+    infoContent.classList.toggle('hidden');
+    infoIcon.classList.toggle('rotate-180');
+});
+
+// ==========================================
+// 10. ЛОГИКА ПЕРЕКЛЮЧЕНИЯ СТИЛЕЙ
+// ==========================================
+const styleToggleBtn = document.getElementById('style-toggle');
+const styleToggleThumb = document.getElementById('style-toggle-thumb');
+const styleToggleLabel = document.getElementById('style-toggle-label');
+
+function toggleStyle() {
+    isDebugMode = !isDebugMode;
+    
+    // Анимация кнопки
+    if (isDebugMode) {
+        styleToggleBtn.classList.replace('bg-neutral-700', 'bg-cyan-500');
+        styleToggleThumb.classList.replace('translate-x-1', 'translate-x-6');
+    } else {
+        styleToggleBtn.classList.replace('bg-cyan-500', 'bg-neutral-700');
+        styleToggleThumb.classList.replace('translate-x-6', 'translate-x-1');
+    }
+    
+    // Обновляем атласы
+    drawBaseAtlas();
+    updateUIAtlas();
+    baseAtlasTexture.needsUpdate = true;
+    uiAtlasTexture.needsUpdate = true;
+}
+
+styleToggleBtn.addEventListener('click', toggleStyle);
+styleToggleLabel.addEventListener('click', toggleStyle);
+
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
