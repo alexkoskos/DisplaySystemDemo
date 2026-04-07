@@ -98,7 +98,7 @@
             
             <div class="bg-blue-900/20 border border-blue-800/50 p-3 rounded-md mb-6">
                 <p class="text-xs text-blue-300 leading-relaxed">
-                    <strong data-i18n="packTitle">Упаковка данных:</strong> <span data-i18n-html="packDesc">Т.к. формат .exr может хранить значения более единицы, в каждый канал RGB текстуры запакованы сразу <strong>2 значения</strong> (в целую и дробную часть). Например, позиция по X и Y может быть записана как <code class="bg-blue-950 px-1 rounded">3.2</code>.</span>
+                    <strong data-i18n="packTitle">Упаковка данных:</strong> <span data-i18n-html="packDesc">Т.к. формат .exr может хранить значения более единицы, в каждый канал RGB текстуры запакованы сразу <strong>2 значения</strong> (в целую и дробную часть). Например, позиция по X и Y может быть записана как <code class="bg-blue-950 px-1 rounded">3.2</code>. В движке текстура жмется как <strong>HDR Compressed (8 bit)</strong> и сэмплится с <strong>Nearest</strong> фильтрацией без потери данных.</span>
                 </p>
             </div>
 
@@ -395,17 +395,17 @@ const PRESETS = {
         {
             name: "Компактный",
             cells: [
-                { id: "A", type: 2, variant: 0, gridX: 0, gridY: 0 }, // 1x2 (слева)
-                { id: "B", type: 1, variant: 1, gridX: 1, gridY: 0 }, // 2x1 (сверху справа)
-                { id: "C", type: 0, variant: 2, gridX: 1, gridY: 1 }, // 1x1 
-                { id: "D", type: 0, variant: 3, gridX: 2, gridY: 1 }  // 1x1
+                { id: "A", type: 2, variant: 0, gridX: 0, gridY: 0 },
+                { id: "B", type: 1, variant: 1, gridX: 1, gridY: 0 },
+                { id: "C", type: 0, variant: 2, gridX: 1, gridY: 1 },
+                { id: "D", type: 0, variant: 3, gridX: 2, gridY: 1 }
             ]
         },
         {
             name: "Центр 1x2",
             cells: [
                 { id: "A", type: 0, variant: 0, gridX: 0, gridY: 0 },
-                { id: "B", type: 2, variant: 0, gridX: 1, gridY: 0 }, // 1x2 (по центру)
+                { id: "B", type: 2, variant: 0, gridX: 1, gridY: 0 },
                 { id: "C", type: 0, variant: 2, gridX: 2, gridY: 0 },
                 { id: "D", type: 0, variant: 3, gridX: 0, gridY: 1 },
                 { id: "E", type: 0, variant: 5, gridX: 2, gridY: 1 }
@@ -414,9 +414,9 @@ const PRESETS = {
         {
             name: "Широкие панели",
             cells: [
-                { id: "A", type: 1, variant: 0, gridX: 0, gridY: 0 }, // 2x1
-                { id: "B", type: 2, variant: 1, gridX: 2, gridY: 0 }, // 1x2
-                { id: "C", type: 1, variant: 2, gridX: 0, gridY: 1 }  // 2x1
+                { id: "A", type: 1, variant: 0, gridX: 0, gridY: 0 },
+                { id: "B", type: 2, variant: 1, gridX: 2, gridY: 0 },
+                { id: "C", type: 1, variant: 2, gridX: 0, gridY: 1 }
             ]
         }
     ]
@@ -434,11 +434,11 @@ let currentLang = 'ru';
 const i18n = {
     ru: {
         howItWorks: "Как это работает?",
-        desc1: "<strong class=\"text-white\">Display System</strong> — это комбинаторная система для рендеринга дисплеев со сложной сеткой в мире игры за 1 вызов отрисовки.",
+        desc1: "<strong class=\"text-white\">Display System</strong> — это комбинаторная система для рендеринга дисплеев со сложной сеткой в мире игры за 1 вызов отрисовки. Текстурный атлас сэмплится 1 раз и вся магия происходит на модификации uv координат, где мы с помощью скалирования и смещения значений в каждой ячейке, указываем место на атласе.",
         genTitle: "Генерация пресетов (Houdini)",
         genDesc: "Для получения предсказуемого контроля пиксельные пресеты создаются вручную — ячейки раскрашиваются разной яркостью. Далее в <strong>Houdini</strong> ячейки отделяются на основе разницы яркости. Каждая считает свой размер, позицию, аспект и индекс, после чего данные запаковываются в <strong>.exr</strong> текстуру.",
         packTitle: "Упаковка данных:",
-        packDesc: "Т.к. формат .exr может хранить значения более единицы, в каждый канал RGB текстуры запакованы сразу <strong>2 значения</strong> (в целую и дробную часть). Например, позиция по X и Y может быть записана как <code class=\"bg-blue-950 px-1 rounded\">3.2</code>.",
+        packDesc: "Т.к. формат .exr может хранить значения более единицы, в каждый канал RGB текстуры запакованы сразу <strong>2 значения</strong> (в целую и дробную часть). Например, позиция по X и Y может быть записана как <code class=\"bg-blue-950 px-1 rounded\">3.2</code>. В движке текстура жмется как <strong>HDR Compressed (8 bit)</strong> и сэмплится с <strong>Nearest</strong> фильтрацией без потери данных.",
         shaderTitle: "Распаковка в Шейдере",
         rDesc: "Позиция ячейки в пресете. Отвечает за отступ, чтобы сместить отсчет координат на 0 в каждой ячейке.",
         gDesc: "Размер ячейки. Трансформирует координаты для приведения UV к 0-1. Указывает, насколько сдвинуть UV по вертикали для следующего варианта.",
@@ -472,11 +472,11 @@ const i18n = {
     },
     en: {
         howItWorks: "How does it work?",
-        desc1: "<strong class=\"text-white\">Display System</strong> is a combinatorial system for rendering complex grid displays in the game world with a single draw call.",
+        desc1: "<strong class=\"text-white\">Display System</strong> is a combinatorial system for rendering complex grid displays in the game world with a single draw call. The texture atlas is sampled only once, and all the magic happens by modifying UV coordinates, where we scale and offset the values in each cell to point to the correct area on the atlas.",
         genTitle: "Preset Generation (Houdini)",
         genDesc: "For predictable control, pixel presets are created manually — cells are colored with varying brightness. Then, in <strong>Houdini</strong>, cells are separated based on brightness differences. Each calculates its size, position, aspect, and index, and the data is packed into an <strong>.exr</strong> texture.",
         packTitle: "Data Packing:",
-        packDesc: "Since the .exr format can store values > 1, each RGB channel packs <strong>2 values</strong> (integer and fractional). For example, X and Y positions might be stored as <code class=\"bg-blue-950 px-1 rounded\">3.2</code>.",
+        packDesc: "Since the .exr format can store values > 1, each RGB channel packs <strong>2 values</strong> (integer and fractional). For example, X and Y positions might be stored as <code class=\"bg-blue-950 px-1 rounded\">3.2</code>. In the engine, the texture is set to <strong>HDR Compressed (8 bit)</strong> and read with <strong>Nearest</strong> filtering without data loss.",
         shaderTitle: "Shader Unpacking",
         rDesc: "Cell position in the preset. Handles the offset to reset local coordinates to 0 in each cell.",
         gDesc: "Cell size. Transforms coordinates to map UVs to 0-1. Defines vertical UV shift for the next variant.",
@@ -516,7 +516,6 @@ const presetNames = {
 };
 
 function updateLanguage() {
-    // Update simple texts and innerHTML
     document.querySelectorAll('[data-i18n]').forEach(el => {
         el.innerText = i18n[currentLang][el.getAttribute('data-i18n')];
     });
@@ -524,7 +523,6 @@ function updateLanguage() {
         el.innerHTML = i18n[currentLang][el.getAttribute('data-i18n-html')];
     });
 
-    // Rebuild UI components that depend on language
     populatePresets();
     buildUI();
 }
@@ -604,16 +602,13 @@ uiAtlasCanvas.width = atlasW;
 uiAtlasCanvas.height = atlasH;
 const uiCtx = uiAtlasCanvas.getContext('2d');
 
-let isDebugMode = false; // Текущий режим атласа (Sci-Fi по умолчанию)
+let isDebugMode = false;
 
-// Процедурный генератор "реалистичного" атласа (чтобы не грузить внешние картинки)
 function drawBaseAtlas() {
     if (!isDebugMode) {
-        // Темно-серый фон текстуры (Sci-Fi)
         cleanCtx.fillStyle = '#0a0a0a'; 
         cleanCtx.fillRect(0, 0, atlasW, atlasH);
         
-        // Техническая сетка на фоне
         cleanCtx.strokeStyle = 'rgba(56, 189, 248, 0.05)';
         cleanCtx.lineWidth = 1;
         for(let i=0; i<=atlasCols; i++) {
@@ -625,11 +620,9 @@ function drawBaseAtlas() {
             cleanCtx.beginPath(); cleanCtx.moveTo(0, val); cleanCtx.lineTo(atlasW, val); cleanCtx.stroke();
         }
     } else {
-        // Темно-серый фон текстуры (Debug)
         cleanCtx.fillStyle = '#171717'; 
         cleanCtx.fillRect(0, 0, atlasW, atlasH);
         
-        // Сетка
         cleanCtx.strokeStyle = 'rgba(255,255,255,0.03)';
         cleanCtx.lineWidth = 1;
         for(let i=0; i<=atlasCols; i++) {
@@ -668,37 +661,30 @@ function drawBaseAtlas() {
         const pw = w * unit; const ph = h * unit;
         const pad = 8;
 
-        // Цветная полупрозрачная обводка для связи с легендой
         cleanCtx.globalAlpha = 0.7;
         cleanCtx.strokeStyle = COLORS[type].border;
         cleanCtx.lineWidth = 2;
         cleanCtx.strokeRect(px + 2, py + 2, pw - 4, ph - 4);
         cleanCtx.globalAlpha = 1.0;
 
-        // Основная плашка (градиент)
         const grad = cleanCtx.createLinearGradient(px, py, px, py + ph);
         grad.addColorStop(0, '#262626');
         grad.addColorStop(1, '#171717');
         cleanCtx.fillStyle = grad;
         cleanCtx.fillRect(px + pad, py + pad, pw - pad*2, ph - pad*2);
 
-        // Внутреннее свечение/скос
         cleanCtx.strokeStyle = '#404040';
         cleanCtx.lineWidth = 2;
         cleanCtx.strokeRect(px + pad + 2, py + pad + 2, pw - pad*2 - 4, ph - pad*2 - 4);
 
-        // Рисуем специфичную графику в зависимости от размера ячейки
         if (type === 0) {
-            // 1x1: Иконки навыков или предметов
             const cx = px + pw/2; const cy = py + ph/2;
             const hue = (variant * 55) % 360;
             
-            // Внешний контур иконки
             cleanCtx.strokeStyle = '#404040';
             cleanCtx.lineWidth = 3;
             cleanCtx.beginPath(); cleanCtx.arc(cx, cy, 42, 0, Math.PI*2); cleanCtx.stroke();
             
-            // Внутренняя заливка-акцент
             cleanCtx.fillStyle = `hsla(${hue}, 40%, 55%, 0.9)`;
             cleanCtx.beginPath();
             if (variant % 3 === 0) {
@@ -711,59 +697,46 @@ function drawBaseAtlas() {
             cleanCtx.fill();
             
         } else if (type === 1) {
-            // 2x1: Полоски ХП/Маны или Кнопки с текстом
-            cleanCtx.fillStyle = '#0a0a0a'; // Фон бара
+            cleanCtx.fillStyle = '#0a0a0a';
             cleanCtx.fillRect(px + pad + 20, py + ph/2 - 16, pw - pad*2 - 40, 32);
             
-            const hue = variant % 2 === 0 ? 0 : 200; // Красный или Синий
+            const hue = variant % 2 === 0 ? 0 : 200;
             cleanCtx.fillStyle = `hsla(${hue}, 45%, 45%, 0.8)`;
             const fillWidth = (pw - pad*2 - 48) * (0.3 + (variant%5)*0.15);
             cleanCtx.fillRect(px + pad + 24, py + ph/2 - 12, fillWidth, 24);
             
-            // Имитация текста над баром
             cleanCtx.fillStyle = '#525252';
             cleanCtx.fillRect(px + pad + 20, py + 20, 80, 10);
 
         } else if (type === 2) {
-            // 1x2: Карточки персонажей (Портреты)
             const cx = px + pw/2;
-            // Фон шапки
             cleanCtx.fillStyle = '#262626';
             cleanCtx.fillRect(px + pad + 2, py + pad + 2, pw - pad*2 - 4, 53);
             
-            // Силуэт
             cleanCtx.fillStyle = `hsla(${variant * 40}, 15%, 35%, 1)`;
             
-            // Разная форма головы в зависимости от варианта
             if (variant === 0) {
-                // Круг
                 cleanCtx.beginPath(); cleanCtx.arc(cx, py + 133, 33, 0, Math.PI*2); cleanCtx.fill();
             } else if (variant === 1) {
-                // Треугольник
                 cleanCtx.beginPath(); 
                 cleanCtx.moveTo(cx, py + 100); 
                 cleanCtx.lineTo(cx + 33, py + 166); 
                 cleanCtx.lineTo(cx - 33, py + 166); 
                 cleanCtx.fill();
             } else if (variant === 2) {
-                // Квадрат
                 cleanCtx.fillRect(cx - 33, py + 100, 66, 66);
             } else {
                 cleanCtx.beginPath(); cleanCtx.arc(cx, py + 133, 33, 0, Math.PI*2); cleanCtx.fill();
             }
             
-            // Плечи (одинаковые для всех)
             cleanCtx.beginPath(); cleanCtx.arc(cx, py + 266, 66, Math.PI, Math.PI*2); cleanCtx.fill();
             
-            // Имитация статов внизу
             cleanCtx.fillStyle = '#404040';
             cleanCtx.fillRect(cx - 40, py + ph - 53, 80, 8);
             cleanCtx.fillRect(cx - 40, py + ph - 33, 53, 8);
 
         } else if (type === 3) {
-            // 1x3: Длинные боковые панели
             if (variant === 0) {
-                // Вариант 0: Панель Инвентаря
                 cleanCtx.fillStyle = '#171717';
                 cleanCtx.strokeStyle = '#262626';
                 cleanCtx.lineWidth = 2;
@@ -772,44 +745,39 @@ function drawBaseAtlas() {
                     cleanCtx.fillRect(px + pw/2 - 33, slotY, 66, 66);
                     cleanCtx.strokeRect(px + pw/2 - 33, slotY, 66, 66);
                     
-                    // Рандомный лут в слотах
                     if (i % 2 === 0) {
-                        cleanCtx.fillStyle = 'rgba(14, 165, 233, 0.4)'; // Обычный предмет (синий)
+                        cleanCtx.fillStyle = 'rgba(14, 165, 233, 0.4)';
                         cleanCtx.fillRect(px + pw/2 - 13, slotY + 20, 26, 26);
                         cleanCtx.fillStyle = '#171717';
                     } else if (i === 3) {
-                        cleanCtx.fillStyle = 'rgba(239, 68, 68, 0.4)'; // Эпик предмет (красный)
+                        cleanCtx.fillStyle = 'rgba(239, 68, 68, 0.4)';
                         cleanCtx.fillRect(px + pw/2 - 13, slotY + 20, 26, 26);
                         cleanCtx.fillStyle = '#171717';
                     }
                 }
             } else if (variant === 1) {
-                // Вариант 1: Системный монитор / Графики
                 cleanCtx.fillStyle = '#171717';
-                cleanCtx.fillRect(px + pad + 20, py + pad + 26, pw - pad*2 - 40, 120); // Экран
+                cleanCtx.fillRect(px + pad + 20, py + pad + 26, pw - pad*2 - 40, 120);
                 
-                // Осциллограмма
                 cleanCtx.beginPath();
-                cleanCtx.strokeStyle = 'rgba(16, 185, 129, 0.6)'; // Изумрудный график
+                cleanCtx.strokeStyle = 'rgba(16, 185, 129, 0.6)';
                 cleanCtx.lineWidth = 2;
                 for(let i=0; i<pw - pad*2 - 40; i+=3) {
                     const gx = px + pad + 20 + i;
-                    const gy = py + pad + 86 + Math.sin(i * 0.15) * 26; // Волна
+                    const gy = py + pad + 86 + Math.sin(i * 0.15) * 26;
                     if (i === 0) cleanCtx.moveTo(gx, gy);
                     else cleanCtx.lineTo(gx, gy);
                 }
                 cleanCtx.stroke();
                 
-                // Имитация списка параметров
                 cleanCtx.fillStyle = '#404040';
                 for(let i=0; i<5; i++) {
                     const rowY = py + pad + 186 + i * 53;
-                    cleanCtx.fillRect(px + pad + 20, rowY, 26, 26); // Квадратная иконка
+                    cleanCtx.fillRect(px + pad + 20, rowY, 26, 26);
                     
-                    // Детерминированная "случайная" ширина для строк
                     const textWidth = (pw - pad*2 - 80) * (0.4 + (Math.sin(i * 10) * 0.5 + 0.5) * 0.5);
-                    cleanCtx.fillRect(px + pad + 60, rowY + 3, textWidth, 8); // Текст 1
-                    cleanCtx.fillRect(px + pad + 60, rowY + 16, 40, 5); // Текст 2 (мелкий)
+                    cleanCtx.fillRect(px + pad + 60, rowY + 3, textWidth, 8);
+                    cleanCtx.fillRect(px + pad + 60, rowY + 16, 40, 5);
                 }
             }
         }
@@ -822,13 +790,11 @@ function drawBaseAtlas() {
     for(let i=0; i<=TYPES[2].maxVars; i++) drawFn(2, i, 3, i * 2, 1, 2);
     for(let i=0; i<=TYPES[3].maxVars; i++) drawFn(3, i, 4, i * 3, 1, 3);
 
-    // Копируем на базовый атлас для итогового экрана и рисуем номера размера 2x
     baseCtx.clearRect(0, 0, atlasW, atlasH);
     baseCtx.drawImage(cleanAtlasCanvas, 0, 0);
     drawNumbers(baseCtx, 2);
 }
 
-// Отрисовка номеров в левом нижнем углу с заданным масштабом
 function drawNumbers(ctx, scale) {
     if (isDebugMode) return;
     ctx.fillStyle = "rgba(255, 255, 255, 0.3)"; 
@@ -849,17 +815,15 @@ function drawNumbers(ctx, scale) {
     for(let i=0; i<=TYPES[2].maxVars; i++) drawNum(2, i, 3, i * 2, 1, 2);
     for(let i=0; i<=TYPES[3].maxVars; i++) drawNum(3, i, 4, i * 3, 1, 3);
     
-    ctx.shadowBlur = 0; // Сброс тени
+    ctx.shadowBlur = 0;
 }
 
-// Отрисовка UI выделения (Слева)
 function updateUIAtlas() {
     uiCtx.clearRect(0, 0, atlasW, atlasH);
-    uiCtx.drawImage(cleanAtlasCanvas, 0, 0); // Берем ЧИСТЫЙ холст без номеров
+    uiCtx.drawImage(cleanAtlasCanvas, 0, 0);
 
     const cells = PRESETS[currentAspect][currentPresetIndex].cells;
 
-    // Рисуем циановое свечение над выбранными элементами
     cells.forEach(cell => {
         const typeInfo = TYPES[cell.type];
         let x = 0;
@@ -871,17 +835,14 @@ function updateUIAtlas() {
         const w = typeInfo.w;
         const h = typeInfo.h;
 
-        // Нежная полупрозрачная заливка
         uiCtx.fillStyle = "rgba(56, 189, 248, 0.15)"; 
         uiCtx.fillRect(x * unit, y * unit, w * unit, h * unit);
         
-        // Яркая неоновая рамка выделения
         uiCtx.strokeStyle = "rgba(56, 189, 248, 0.8)"; 
         uiCtx.lineWidth = 3;
         uiCtx.strokeRect(x * unit + 3, y * unit + 3, w * unit - 6, h * unit - 6);
     });
 
-    // Рисуем номера размера 3x для экрана-атласа
     drawNumbers(uiCtx, 3);
 }
 
@@ -958,7 +919,7 @@ function drawUIPresetCanvas() {
     const cells = PRESETS[currentAspect][currentPresetIndex].cells;
     const cols = GRIDS[currentAspect].cols;
     
-    const cellSize = 60 / cols; // = 20
+    const cellSize = 60 / cols;
 
     ctx.fillStyle = '#171717';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -987,7 +948,7 @@ function drawUIPresetCanvas() {
 // ==========================================
 const displaySystemShader = {
     uniforms: {
-        tPreset: { value: null }, // Initialize later
+        tPreset: { value: null },
         tAtlas: { value: baseAtlasTexture },
         uGridSize: { value: new THREE.Vector2(3, 3) }
     },
@@ -1034,34 +995,30 @@ const displaySystemShader = {
 // ==========================================
 const planeGeometry = new THREE.PlaneGeometry(1, 1);
 
-// Экран 1: Атлас (Слева)
 const matAtlas = new THREE.MeshBasicMaterial({ map: uiAtlasTexture });
 const meshAtlas = new THREE.Mesh(planeGeometry, matAtlas);
 meshAtlas.scale.set(10, 12, 1);
-meshAtlas.position.set(-7.5, 1.5, 0); // Отодвинули левее
+meshAtlas.position.set(-7.5, 1.5, 0); 
 scene.add(meshAtlas);
 
-let meshScreen; // Declare early
+let meshScreen; 
 
-// Экран 2: Итоговый экран (Справа)
 const matScreen = new THREE.ShaderMaterial(displaySystemShader);
 meshScreen = new THREE.Mesh(planeGeometry, matScreen);
-meshScreen.scale.set(12, 12, 1); // Будет обновлено в initPresetTexture
-meshScreen.position.set(6.5, 1.5, 0); // Отодвинули правее
+meshScreen.scale.set(12, 12, 1);
+meshScreen.position.set(6.5, 1.5, 0);
 scene.add(meshScreen);
 
-// Оверлеи для эффектов Hover и Click на итоговом экране
 const overlayGeo = new THREE.PlaneGeometry(1, 1);
 const hoverMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending, depthWrite: false });
 const hoverMesh = new THREE.Mesh(overlayGeo, hoverMat);
 hoverMesh.position.z = 0.01;
-meshScreen.add(hoverMesh); // Добавляем как дочерний объект экрана
+meshScreen.add(hoverMesh);
 
 const clickMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending, depthWrite: false });
 const clickMesh = new THREE.Mesh(overlayGeo, clickMat);
 clickMesh.position.z = 0.02;
 meshScreen.add(clickMesh);
-
 
 // ==========================================
 // 7. ИНТЕРФЕЙС И СОБЫТИЯ
@@ -1085,7 +1042,7 @@ function populatePresets() {
 
 function buildUI() {
     slidersContainer.innerHTML = '';
-    cellLabelsContainer.innerHTML = ''; // Очищаем контейнер букв на экране
+    cellLabelsContainer.innerHTML = '';
     
     const cells = PRESETS[currentAspect][currentPresetIndex].cells;
     
@@ -1107,7 +1064,7 @@ function buildUI() {
         
         const title = document.createElement('span');
         title.className = 'text-sm font-semibold text-neutral-200';
-        title.innerText = `${i18n[currentLang].cellStr} ${cell.id}`; // Заголовок ячейки в панели
+        title.innerText = `${i18n[currentLang].cellStr} ${cell.id}`;
         
         titleContainer.appendChild(colorDot);
         titleContainer.appendChild(title);
@@ -1137,12 +1094,10 @@ function buildUI() {
         wrapperDiv.appendChild(slider);
         slidersContainer.appendChild(wrapperDiv);
 
-        // Создаем HTML лейбл с буквой для итогового экрана
         const screenLabel = document.createElement('div');
         screenLabel.id = `cell-label-${idx}`;
         screenLabel.className = 'absolute text-emerald-400 font-bold font-mono text-xs bg-neutral-950/80 px-1.5 py-0.5 rounded border border-emerald-500/30 backdrop-blur-sm';
         screenLabel.innerText = cell.id;
-        // Оффсет для центрирования по правому нижнему углу с небольшим отступом
         screenLabel.style.transform = 'translate(calc(-100% - 8px), calc(-100% - 8px))';
         cellLabelsContainer.appendChild(screenLabel);
     });
@@ -1174,7 +1129,6 @@ buildUI();
 updatePresetTexture();
 updateUIAtlas();
 
-// Обновление HTML лейблов
 function updateLabels() {
     const lblAtlas = document.getElementById('label-atlas');
     const lblScreen = document.getElementById('label-screen');
@@ -1194,11 +1148,9 @@ function updateLabels() {
         element.style.top = `${y}px`;
     };
 
-    // Поднимаем подписи выше (с 6.8 до 8.0)
     updatePos(meshAtlas, lblAtlas, 8.0);
     updatePos(meshScreen, lblScreen, 8.0);
 
-    // Обновляем позиции букв (A, B, C...) для ячеек итогового экрана
     const cells = PRESETS[currentAspect][currentPresetIndex].cells;
     const cols = GRIDS[currentAspect].cols;
     const rows = GRIDS[currentAspect].rows;
@@ -1209,13 +1161,12 @@ function updateLabels() {
 
         const typeInfo = TYPES[cell.type];
         
-        // Находим правый нижний угол ячейки в локальных координатах плоскости (-0.5 .. 0.5)
         const lx = -0.5 + (cell.gridX + typeInfo.w) / cols;
         const ly = 0.5 - (cell.gridY + typeInfo.h) / rows;
         
         const vector = new THREE.Vector3(lx, ly, 0);
-        vector.applyMatrix4(meshScreen.matrixWorld); // Переводим в мировые координаты экрана
-        vector.project(camera); // Проецируем на 2D экран
+        vector.applyMatrix4(meshScreen.matrixWorld); 
+        vector.project(camera); 
         
         const w = getW();
         const h = getH();
@@ -1227,7 +1178,6 @@ function updateLabels() {
     });
 }
 
-// Ресайз
 window.addEventListener('resize', () => {
     renderer.setSize(getW(), getH());
     updateCameraAspect();
@@ -1243,7 +1193,6 @@ const mouse = new THREE.Vector2();
 let hoverTargetOpacity = 0.0;
 let hoveredCellId = null;
 
-// Рандомизация одной ячейки по клику и эффект клика
 container.addEventListener('mousedown', (event) => {
     const rect = renderer.domElement.getBoundingClientRect();
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -1259,7 +1208,7 @@ container.addEventListener('mousedown', (event) => {
         const uv = intersects[0].uv;
         const gx = Math.floor(uv.x * cols);
         const webglY = Math.floor(uv.y * rows);
-        const gy = (rows - 1) - webglY; // Переводим WebGL Y (снизу-вверх) в Grid Y (сверху-вниз)
+        const gy = (rows - 1) - webglY; 
 
         const cells = PRESETS[currentAspect][currentPresetIndex].cells;
         const clickedCell = cells.find(c => {
@@ -1269,19 +1218,16 @@ container.addEventListener('mousedown', (event) => {
         });
 
         if (clickedCell) {
-            // Запускаем эффект яркой вспышки при клике
             clickMat.opacity = 0.08;
 
             const typeInfo = TYPES[clickedCell.type];
             if (typeInfo.maxVars > 0) {
                 let newVariant = clickedCell.variant;
-                // Гарантированно выбираем новый вариант, чтобы визуально был отклик
                 while (newVariant === clickedCell.variant) {
                     newVariant = Math.floor(Math.random() * (typeInfo.maxVars + 1));
                 }
                 clickedCell.variant = newVariant;
                 
-                // Пересобираем UI чтобы ползунок обновился
                 buildUI();
                 updatePresetTexture();
                 updateUIAtlas();
@@ -1291,7 +1237,6 @@ container.addEventListener('mousedown', (event) => {
     }
 });
 
-// Смена курсора и эффект Hover при наведении на итоговый экран
 container.addEventListener('mousemove', (event) => {
     const rect = renderer.domElement.getBoundingClientRect();
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -1318,21 +1263,18 @@ container.addEventListener('mousemove', (event) => {
 
         if (intersectedCell) {
             container.style.cursor = 'pointer';
-            hoverTargetOpacity = 0.04; // Устанавливаем целевую прозрачность для ховера
+            hoverTargetOpacity = 0.04; 
 
             if (hoveredCellId !== intersectedCell.id) {
                 hoveredCellId = intersectedCell.id;
                 const typeInfo = TYPES[intersectedCell.type];
                 
-                // Вычисляем локальные координаты центра ячейки относительно экрана (от -0.5 до 0.5)
                 const lx = -0.5 + (intersectedCell.gridX + typeInfo.w / 2) / cols;
                 const ly = 0.5 - (intersectedCell.gridY + typeInfo.h / 2) / rows;
                 
-                // Подгоняем размеры и позицию hover-меша
                 hoverMesh.scale.set(typeInfo.w / cols, typeInfo.h / rows, 1);
                 hoverMesh.position.set(lx, ly, 0.01);
                 
-                // Click-меш следует за hover-мешем
                 clickMesh.scale.copy(hoverMesh.scale);
                 clickMesh.position.copy(hoverMesh.position);
                 clickMesh.position.z = 0.02;
@@ -1349,7 +1291,6 @@ container.addEventListener('mousemove', (event) => {
     }
 });
 
-// Кнопка Dice (Рандомизировать все)
 document.getElementById('randomize-all-btn').addEventListener('click', () => {
     const cells = PRESETS[currentAspect][currentPresetIndex].cells;
     cells.forEach(cell => {
@@ -1359,7 +1300,6 @@ document.getElementById('randomize-all-btn').addEventListener('click', () => {
         }
     });
     
-    // Анимация вращения иконки
     const btnIcon = document.querySelector('#randomize-all-btn svg');
     btnIcon.style.transition = 'transform 0.3s ease';
     btnIcon.style.transform = `rotate(${Math.random() > 0.5 ? 180 : -180}deg)`;
@@ -1377,9 +1317,8 @@ document.getElementById('randomize-all-btn').addEventListener('click', () => {
 function animate() {
     requestAnimationFrame(animate);
     
-    // Плавная анимация эффектов Hover и Click
     hoverMat.opacity += (hoverTargetOpacity - hoverMat.opacity) * 0.25;
-    clickMat.opacity += (0.0 - clickMat.opacity) * 0.6; // Быстрое затухание вспышки
+    clickMat.opacity += (0.0 - clickMat.opacity) * 0.6; 
     
     updateLabels();
     renderer.render(scene, camera);
@@ -1408,7 +1347,6 @@ const styleToggleLabel = document.getElementById('style-toggle-label');
 function toggleStyle() {
     isDebugMode = !isDebugMode;
     
-    // Анимация кнопки
     if (isDebugMode) {
         styleToggleBtn.classList.replace('bg-neutral-700', 'bg-cyan-500');
         styleToggleThumb.classList.replace('translate-x-1', 'translate-x-6');
@@ -1417,7 +1355,6 @@ function toggleStyle() {
         styleToggleThumb.classList.replace('translate-x-6', 'translate-x-1');
     }
     
-    // Обновляем атласы
     drawBaseAtlas();
     updateUIAtlas();
     baseAtlasTexture.needsUpdate = true;
