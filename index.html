@@ -160,6 +160,83 @@
                 </div>
             </div>
 
+            <!-- НОВЫЙ БЛОК: Матрица аспектов -->
+            <div class="bg-neutral-950/50 p-4 rounded-lg border border-neutral-800 mt-4 mb-4">
+                <h3 class="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3" data-i18n="schemeTitle">Матрица аспектов</h3>
+                <p class="text-[11px] text-neutral-500 leading-relaxed mb-4" data-i18n="schemeDesc">
+                    Схема возможных вариантов размеров ячеек (от 1x1 до 4x4), из которых собирается итоговая сетка. Цветом выделены модули, задействованные в текущем демо.
+                </p>
+                <div class="bg-neutral-900 p-3 rounded-md border border-neutral-800 flex justify-center">
+                    <svg viewBox="0 0 350 340" class="w-full h-auto drop-shadow-lg">
+                        <!-- Оси -->
+                        <text fill="#737373" font-size="14" font-weight="600" font-family="monospace" text-anchor="middle" alignment-baseline="middle" x="20" y="60">4</text>
+                        <text fill="#737373" font-size="14" font-weight="600" font-family="monospace" text-anchor="middle" alignment-baseline="middle" x="20" y="163.5">3</text>
+                        <text fill="#737373" font-size="14" font-weight="600" font-family="monospace" text-anchor="middle" alignment-baseline="middle" x="20" y="242">2</text>
+                        <text fill="#737373" font-size="14" font-weight="600" font-family="monospace" text-anchor="middle" alignment-baseline="middle" x="20" y="295.5">1</text>
+
+                        <text fill="#737373" font-size="14" font-weight="600" font-family="monospace" text-anchor="middle" alignment-baseline="middle" x="52.5" y="325">1</text>
+                        <text fill="#737373" font-size="14" font-weight="600" font-family="monospace" text-anchor="middle" alignment-baseline="middle" x="106" y="325">2</text>
+                        <text fill="#737373" font-size="14" font-weight="600" font-family="monospace" text-anchor="middle" alignment-baseline="middle" x="184.5" y="325">3</text>
+                        <text fill="#737373" font-size="14" font-weight="600" font-family="monospace" text-anchor="middle" alignment-baseline="middle" x="288" y="325">4</text>
+
+                        <!-- Колонка 1 -->
+                        <rect x="40" y="10" width="25" height="100" fill="#171717" stroke="#404040" stroke-width="1.5" rx="2" />
+                        <path d="M40 35 h25 M40 60 h25 M40 85 h25" stroke="#262626" stroke-width="1" />
+                        
+                        <!-- 1x3 (Активный: Фиолетовый) -->
+                        <rect x="40" y="126" width="25" height="75" fill="#3e285c" stroke="#664396" stroke-width="1.5" rx="2" />
+                        <path d="M40 151 h25 M40 176 h25" stroke="#664396" stroke-width="1" opacity="0.6"/>
+                        
+                        <!-- 1x2 (Активный: Синий) -->
+                        <rect x="40" y="217" width="25" height="50" fill="#213b5e" stroke="#3b6399" stroke-width="1.5" rx="2" />
+                        <path d="M40 242 h25" stroke="#3b6399" stroke-width="1" opacity="0.6"/>
+                        
+                        <!-- 1x1 (Активный: Красный) -->
+                        <rect x="40" y="283" width="25" height="25" fill="#4a2531" stroke="#7a3e52" stroke-width="1.5" rx="2" />
+
+                        <!-- Колонка 2 -->
+                        <rect x="81" y="10" width="50" height="100" fill="#171717" stroke="#404040" stroke-width="1.5" rx="2" />
+                        <path d="M106 10 v100 M81 35 h50 M81 60 h50 M81 85 h50" stroke="#262626" stroke-width="1" />
+                        
+                        <rect x="81" y="126" width="50" height="75" fill="#171717" stroke="#404040" stroke-width="1.5" rx="2" />
+                        <path d="M106 126 v75 M81 151 h50 M81 176 h50" stroke="#262626" stroke-width="1" />
+                        
+                        <rect x="81" y="217" width="50" height="50" fill="#171717" stroke="#404040" stroke-width="1.5" rx="2" />
+                        <path d="M106 217 v50 M81 242 h50" stroke="#262626" stroke-width="1" />
+                        
+                        <!-- 2x1 (Активный: Зеленый) -->
+                        <rect x="81" y="283" width="50" height="25" fill="#23453f" stroke="#3c7066" stroke-width="1.5" rx="2" />
+                        <path d="M106 283 v25" stroke="#3c7066" stroke-width="1" opacity="0.6"/>
+
+                        <!-- Колонка 3 -->
+                        <rect x="147" y="10" width="75" height="100" fill="#171717" stroke="#404040" stroke-width="1.5" rx="2" />
+                        <path d="M172 10 v100 M197 10 v100 M147 35 h75 M147 60 h75 M147 85 h75" stroke="#262626" stroke-width="1" />
+                        
+                        <rect x="147" y="126" width="75" height="75" fill="#171717" stroke="#404040" stroke-width="1.5" rx="2" />
+                        <path d="M172 126 v75 M197 126 v75 M147 151 h75 M147 176 h75" stroke="#262626" stroke-width="1" />
+                        
+                        <rect x="147" y="217" width="75" height="50" fill="#171717" stroke="#404040" stroke-width="1.5" rx="2" />
+                        <path d="M172 217 v50 M197 217 v50 M147 242 h75" stroke="#262626" stroke-width="1" />
+                        
+                        <rect x="147" y="283" width="75" height="25" fill="#171717" stroke="#404040" stroke-width="1.5" rx="2" />
+                        <path d="M172 283 v25 M197 283 v25" stroke="#262626" stroke-width="1" />
+
+                        <!-- Колонка 4 -->
+                        <rect x="238" y="10" width="100" height="100" fill="#171717" stroke="#404040" stroke-width="1.5" rx="2" />
+                        <path d="M263 10 v100 M288 10 v100 M313 10 v100 M238 35 h100 M238 60 h100 M238 85 h100" stroke="#262626" stroke-width="1" />
+                        
+                        <rect x="238" y="126" width="100" height="75" fill="#171717" stroke="#404040" stroke-width="1.5" rx="2" />
+                        <path d="M263 126 v75 M288 126 v75 M313 126 v75 M238 151 h100 M238 176 h100" stroke="#262626" stroke-width="1" />
+                        
+                        <rect x="238" y="217" width="100" height="50" fill="#171717" stroke="#404040" stroke-width="1.5" rx="2" />
+                        <path d="M263 217 v50 M288 217 v50 M313 217 v50 M238 242 h100" stroke="#262626" stroke-width="1" />
+                        
+                        <rect x="238" y="283" width="100" height="25" fill="#171717" stroke="#404040" stroke-width="1.5" rx="2" />
+                        <path d="M263 283 v25 M288 283 v25 M313 283 v25" stroke="#262626" stroke-width="1" />
+                    </svg>
+                </div>
+            </div>
+
         </div>
     </aside>
 
@@ -377,6 +454,8 @@ const i18n = {
         stat5: "аспектов или размеров ячеек",
         stat6: "вариантов в каждой ячейке",
         statTotal: "= Бесконечная комбинаторика",
+        schemeTitle: "Матрица аспектов",
+        schemeDesc: "Схема возможных вариантов размеров ячеек (от 1x1 до 4x4), из которых собирается итоговая сетка. Цветом выделены модули, задействованные в текущем демо.",
         lblAtlasTitle: "Текстурный Атлас (Виртуальная текстура)",
         lblAtlasDesc: "В памяти только использованные варианты",
         lblScreenTitle: "Итоговый Экран",
@@ -413,6 +492,8 @@ const i18n = {
         stat5: "cell aspects or sizes",
         stat6: "variants per cell",
         statTotal: "= Infinite Combinatorics",
+        schemeTitle: "Aspect Matrix",
+        schemeDesc: "Schematic of possible cell sizes (from 1x1 to 4x4) used to build the final grid. Highlighted modules are the ones used in the current demo.",
         lblAtlasTitle: "Texture Atlas (Virtual Texture)",
         lblAtlasDesc: "Only used variants are loaded in memory",
         lblScreenTitle: "Final Screen",
@@ -1349,13 +1430,3 @@ styleToggleLabel.addEventListener('click', toggleStyle);
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
